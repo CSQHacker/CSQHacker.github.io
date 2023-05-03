@@ -162,6 +162,92 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/05/03/SSRF%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%AF%B7%E6%B1%82%E4%BC%AA%E9%80%A0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="CSQ">
+      <meta itemprop="description" content="学无止境">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="CSQ&个人博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2023/05/03/SSRF%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%AF%B7%E6%B1%82%E4%BC%AA%E9%80%A0/" class="post-title-link" itemprop="url">未命名</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2023-05-03 15:24:23 / 修改时间：15:24:53" itemprop="dateCreated datePublished" datetime="2023-05-03T15:24:23+08:00">2023-05-03</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="SSRF漏洞"><a href="#SSRF漏洞" class="headerlink" title="SSRF漏洞"></a>SSRF漏洞</h2><h4 id="SSRF漏洞概述"><a href="#SSRF漏洞概述" class="headerlink" title="SSRF漏洞概述"></a>SSRF漏洞概述</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SSRF(Server-Side Request Forgery:服务器端请求伪造) 是一种由攻击者构造形成由服务端发起请求的一个安全漏洞。一般情况下，SSRF攻击的目标是从外网无法访问的内部系统。</span><br></pre></td></tr></table></figure>
+
+<h4 id="怎么产生SSRF漏洞"><a href="#怎么产生SSRF漏洞" class="headerlink" title="怎么产生SSRF漏洞"></a>怎么产生SSRF漏洞</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">很多Web应用都提供了从其他服务器上获取数据的功能。使用用户指定的URL，Web应用可以获取图片，下载文件，读取文件内容等。这个功能如果被恶意使用，可以利用存在缺陷的web应用作为代理攻击远程和本地服务器。</span><br><span class="line">服务端提供了从其他服务器应用获取数据的功能且没有对目标地址做过滤与限制.</span><br></pre></td></tr></table></figure>
+
+<p>大部分的web服务器架构中，web服务器自身都可以访问互联网和服务器所在的内网。</p>
+<p><img src="/image/image-20230503125426240.png"></p>
+<h4 id="SSRF能利用的地方"><a href="#SSRF能利用的地方" class="headerlink" title="SSRF能利用的地方"></a>SSRF能利用的地方</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">可以对外网服务器所在的内网、本地进行端口扫描，获取一些服务的banner信息 。</span><br><span class="line">攻击运行在内网或者本地的应用程序。</span><br><span class="line">对内网web应用进行指纹识别，通过访问默认文件实现 。</span><br><span class="line">攻击内外网的web应用。sql注入、struct2、redis等。</span><br><span class="line">利用file协议读取本地文件等。</span><br></pre></td></tr></table></figure>
+
+<h4 id="SSRF相关函数"><a href="#SSRF相关函数" class="headerlink" title="SSRF相关函数"></a>SSRF相关函数</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">file_get_contents</span><br><span class="line"></span><br><span class="line">&lt;?php</span><br><span class="line">if (isset($_POST[&#x27;url&#x27;])) &#123; </span><br><span class="line">$content = file_get_contents($_POST[&#x27;url&#x27;]); </span><br><span class="line">$filename =&#x27;./images/&#x27;.rand().&#x27;;img1.jpg’;</span><br><span class="line"> file_put_contents($filename, $content); </span><br><span class="line">echo $_POST[&#x27;url’]; </span><br><span class="line">$img = &quot;&lt;img src=\&quot;&quot;.$filename.&quot;\&quot;/&gt;&quot;; </span><br><span class="line">&#125; </span><br><span class="line">echo $img; </span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">Fsockopen</span><br><span class="line"></span><br><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">function GetFile($host, $port, $link)</span><br><span class="line">&#123;</span><br><span class="line">    //fsockopen() 将返回一个文件句柄，之后可以被其他文件类函数调用</span><br><span class="line">    //（例如： fgets() ， fgetss() ，</span><br><span class="line">    // fwrite() ， fclose() 还有 feof() ）。如果调用失败，将返回 FALSE 。</span><br><span class="line">    $fp = fsockopen($host, intval($port), $errno, $errstr, 30);</span><br><span class="line">    if (!$fp) &#123;</span><br><span class="line">        echo &quot;$errstr (error number $errno) \n&quot;;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        $out = &quot;GET $link HTTP/1.1\r\n&quot;;</span><br><span class="line">        $out .= &quot;Host: $host\r\n&quot;;</span><br><span class="line">        $out .= &quot;Connection: Close\r\n\r\n&quot;;</span><br><span class="line">        $out .= &quot;\r\n&quot;;</span><br><span class="line">        fwrite($fp, $out);</span><br><span class="line">        $contents = &#x27;&#x27;;</span><br><span class="line">        while (! feof($fp)) &#123;</span><br><span class="line">            $contents .= fgets($fp, 1024);</span><br><span class="line">        &#125;</span><br><span class="line">        fclose($fp);</span><br><span class="line">        return $contents;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">$host = $_GET[&#x27;host&#x27;];</span><br><span class="line">$port = $_GET[&#x27;port&#x27;];</span><br><span class="line">$link = $_GET[&#x27;link&#x27;];</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">curl_exec</span><br><span class="line"></span><br><span class="line">&lt;?php </span><br><span class="line">if (isset($_POST[&#x27;url&#x27;]))&#123;</span><br><span class="line">$link = $_POST[&#x27;url’];</span><br><span class="line">$curlobj = curl_init();</span><br><span class="line">curl_setopt($curlobj, CURLOPT_POST, 0);</span><br><span class="line">curl_setopt($curlobj,CURLOPT_URL,$link);</span><br><span class="line">curl_setopt($curlobj, CURLOPT_RETURNTRANSFER, 1);</span><br><span class="line">$result=curl_exec($curlobj);curl_close($curlobj);</span><br><span class="line">$filename = &#x27;./curled/&#x27;.rand().&#x27;.txt’;</span><br><span class="line">file_put_contents($filename, $result);</span><br><span class="line"> echo $result;&#125;?&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="SSRF漏洞挖掘"><a href="#SSRF漏洞挖掘" class="headerlink" title="SSRF漏洞挖掘"></a>SSRF漏洞挖掘</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">一.Web功能查找</span><br><span class="line">二.通过URL地址分享网页内容</span><br><span class="line">三.转码服务</span><br><span class="line">四.在线翻译</span><br><span class="line">五.图片加载与下载</span><br></pre></td></tr></table></figure>
+
+<h4 id="SSRF漏洞验证"><a href="#SSRF漏洞验证" class="headerlink" title="SSRF漏洞验证"></a>SSRF漏洞验证</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">方式一:</span><br><span class="line">http://www.baidu.com/ShowImage.aspx?ImageUrl=http://www.a.com/a.jpg</span><br><span class="line">1）我们先验证，请求是否是服务器端发出的，可以右键图片，使用新窗口打开图片，如果浏览器上地址栏是</span><br><span class="line">http://www.a.com/a.jpg，（说明不存在SSRF漏洞。）</span><br><span class="line">http://www.baidu.com/uploads/2021080924.jpg  （不存在）</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">方式二:</span><br><span class="line">	可以在Firebug 或者burpsuite抓包工具，查看请求数据包中是否包含http://www.a.com/a.jpg这个请求。由于SSRF是服务端发起的请求，因此在加载这张图片的时候本地浏览器中不应该存在图片的请求。</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">	在验证完是由服务端发起的请求之后，此处就有可能存在SSRF，接下来需要验证此URL是否可以来请求对应的内网地址。首先我们要获取内网存在HTTP服务且存在favicon.ico文件地址，才能验证是否是SSRF。</span><br><span class="line">http://127.0.0.1</span><br><span class="line">此处找内网地址可以通过从漏洞平台中的历史漏洞寻找泄露的内网地址</span><br></pre></td></tr></table></figure>
+
+<h4 id="SSRF常见限制"><a href="#SSRF常见限制" class="headerlink" title="SSRF常见限制"></a>SSRF常见限制</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">1.限制为http://www.xxx.com 域名</span><br><span class="line">采用http基本身份认证的方式绕过。即@</span><br><span class="line">http://www.xxx.com@www.xxc.com</span><br><span class="line"></span><br><span class="line">2.限制请求IP不为内网地址</span><br><span class="line">当不允许ip为内网地址时</span><br><span class="line">（1）采取短网址绕过</span><br><span class="line">（2）采取特殊域名</span><br><span class="line">（3）采取进制转换</span><br><span class="line"></span><br><span class="line">3.限制请求只为http协议</span><br><span class="line">（1）采取302跳转</span><br><span class="line">（2）采取短地址</span><br></pre></td></tr></table></figure>
+
+<h4 id="SSRF常用协议"><a href="#SSRF常用协议" class="headerlink" title="SSRF常用协议"></a>SSRF常用协议</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">dict协议</span><br><span class="line">file协议</span><br><span class="line">http协议</span><br><span class="line">ftp协议(扫描端口极其好用)</span><br><span class="line">gopher协议</span><br></pre></td></tr></table></figure>
+
+<h4 id="SSRF防御"><a href="#SSRF防御" class="headerlink" title="SSRF防御"></a>SSRF防御</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">1.统一错误信息，避免用户可以根据错误信息来判断远程服务器端口状态</span><br><span class="line"></span><br><span class="line">2.限制请求的端口为HTTP常用的端口，比如 80,443,8080,8088等 </span><br><span class="line"></span><br><span class="line">3.黑名单内网IP。</span><br><span class="line"></span><br><span class="line">4.禁用不需要的协议，仅仅允许HTTP和HTTPS.</span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2023/05/03/SQL%E6%B3%A8%E5%85%A5WAF%E7%BB%95%E8%BF%87/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -439,7 +525,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-count">3</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
