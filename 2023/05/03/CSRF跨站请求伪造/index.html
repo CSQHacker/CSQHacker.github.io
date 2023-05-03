@@ -20,17 +20,17 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="CSRF跨站请求伪造CSRF漏洞概述12	CSRF(Cross-Site Request Forgery,跨站请求伪造)，它是一种常见的Web攻击方式，很多开发者对它很陌生。它在2007年曾被列为互联网20大安全隐患之一。即使是大名鼎鼎的Gmail，在2007年底也存在CSRF漏洞，从而被黑客造成巨大的损失。CSRF也被称为 one-click attack 或者 session riding，通">
+  <meta name="description" content="SRF跨站请求伪造CSRF漏洞概述12	CSRF(Cross-Site Request Forgery,跨站请求伪造)，它是一种常见的Web攻击方式，很多开发者对它很陌生。它在2007年曾被列为互联网20大安全隐患之一。即使是大名鼎鼎的Gmail，在2007年底也存在CSRF漏洞，从而被黑客造成巨大的损失。CSRF也被称为 one-click attack 或者 session riding，通常">
 <meta property="og:type" content="article">
-<meta property="og:title" content="CSQ&amp;个人博客">
+<meta property="og:title" content="CSRF跨站请求伪造">
 <meta property="og:url" content="http://example.com/2023/05/03/CSRF%E8%B7%A8%E7%AB%99%E8%AF%B7%E6%B1%82%E4%BC%AA%E9%80%A0/index.html">
 <meta property="og:site_name" content="CSQ&amp;个人博客">
-<meta property="og:description" content="CSRF跨站请求伪造CSRF漏洞概述12	CSRF(Cross-Site Request Forgery,跨站请求伪造)，它是一种常见的Web攻击方式，很多开发者对它很陌生。它在2007年曾被列为互联网20大安全隐患之一。即使是大名鼎鼎的Gmail，在2007年底也存在CSRF漏洞，从而被黑客造成巨大的损失。CSRF也被称为 one-click attack 或者 session riding，通">
+<meta property="og:description" content="SRF跨站请求伪造CSRF漏洞概述12	CSRF(Cross-Site Request Forgery,跨站请求伪造)，它是一种常见的Web攻击方式，很多开发者对它很陌生。它在2007年曾被列为互联网20大安全隐患之一。即使是大名鼎鼎的Gmail，在2007年底也存在CSRF漏洞，从而被黑客造成巨大的损失。CSRF也被称为 one-click attack 或者 session riding，通常">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://example.com/images/image-20230503130950272.png">
 <meta property="og:image" content="http://example.com/images/image-20230503132342126.png">
 <meta property="article:published_time" content="2023-05-03T05:04:57.306Z">
-<meta property="article:modified_time" content="2023-05-03T07:55:47.534Z">
+<meta property="article:modified_time" content="2023-05-03T08:36:16.634Z">
 <meta property="article:author" content="CSQ">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://example.com/images/image-20230503130950272.png">
@@ -48,7 +48,7 @@
   };
 </script>
 
-  <title> | CSQ&个人博客</title>
+  <title>CSRF跨站请求伪造 | CSQ&个人博客</title>
   
 
 
@@ -181,7 +181,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          
+          CSRF跨站请求伪造
         </h1>
 
         <div class="post-meta">
@@ -192,7 +192,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2023-05-03 13:04:57 / 修改时间：15:55:47" itemprop="dateCreated datePublished" datetime="2023-05-03T13:04:57+08:00">2023-05-03</time>
+              <time title="创建时间：2023-05-03 13:04:57 / 修改时间：16:36:16" itemprop="dateCreated datePublished" datetime="2023-05-03T13:04:57+08:00">2023-05-03</time>
             </span>
 
           
@@ -206,7 +206,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="CSRF跨站请求伪造"><a href="#CSRF跨站请求伪造" class="headerlink" title="CSRF跨站请求伪造"></a>CSRF跨站请求伪造</h2><h4 id="CSRF漏洞概述"><a href="#CSRF漏洞概述" class="headerlink" title="CSRF漏洞概述"></a>CSRF漏洞概述</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">	CSRF(Cross-Site Request Forgery,跨站请求伪造)，它是一种常见的Web攻击方式，很多开发者对它很陌生。它在2007年曾被列为互联网20大安全隐患之一。即使是大名鼎鼎的Gmail，在2007年底也存在CSRF漏洞，从而被黑客造成巨大的损失。CSRF也被称为 one-click attack 或者 session riding，通常缩写为 CSRF 或者 XSRF， 是一种挟制用户在当前已登录的Web应用程序上执行非本意的操作的攻击方法。</span><br><span class="line">攻击者盗用了你在某个网站的身份，以你的名义发送恶意请求。</span><br></pre></td></tr></table></figure>
+        <h2 id="SRF跨站请求伪造"><a href="#SRF跨站请求伪造" class="headerlink" title="SRF跨站请求伪造"></a>SRF跨站请求伪造</h2><h4 id="CSRF漏洞概述"><a href="#CSRF漏洞概述" class="headerlink" title="CSRF漏洞概述"></a>CSRF漏洞概述</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">	CSRF(Cross-Site Request Forgery,跨站请求伪造)，它是一种常见的Web攻击方式，很多开发者对它很陌生。它在2007年曾被列为互联网20大安全隐患之一。即使是大名鼎鼎的Gmail，在2007年底也存在CSRF漏洞，从而被黑客造成巨大的损失。CSRF也被称为 one-click attack 或者 session riding，通常缩写为 CSRF 或者 XSRF， 是一种挟制用户在当前已登录的Web应用程序上执行非本意的操作的攻击方法。</span><br><span class="line">攻击者盗用了你在某个网站的身份，以你的名义发送恶意请求。</span><br></pre></td></tr></table></figure>
 
 <h4 id="CSRF能做的事"><a href="#CSRF能做的事" class="headerlink" title="CSRF能做的事"></a>CSRF能做的事</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">以你的名义: </span><br><span class="line">发邮件</span><br><span class="line">发消息</span><br><span class="line">财产操作比如转账，或者购买商品</span><br><span class="line">新建文件...</span><br><span class="line">增删改查的操作他都可以做</span><br><span class="line">等等.....</span><br></pre></td></tr></table></figure>
 
@@ -309,7 +309,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#CSRF%E8%B7%A8%E7%AB%99%E8%AF%B7%E6%B1%82%E4%BC%AA%E9%80%A0"><span class="nav-number">1.</span> <span class="nav-text">CSRF跨站请求伪造</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E6%BC%8F%E6%B4%9E%E6%A6%82%E8%BF%B0"><span class="nav-number">1.0.1.</span> <span class="nav-text">CSRF漏洞概述</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E8%83%BD%E5%81%9A%E7%9A%84%E4%BA%8B"><span class="nav-number">1.0.2.</span> <span class="nav-text">CSRF能做的事</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E6%94%BB%E5%87%BB%E6%B5%81%E7%A8%8B"><span class="nav-number">1.0.3.</span> <span class="nav-text">CSRF攻击流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E5%88%A9%E7%94%A8%E5%89%8D%E6%8F%90%E6%9D%A1%E4%BB%B6"><span class="nav-number">1.0.4.</span> <span class="nav-text">CSRF利用前提条件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E5%88%A9%E7%94%A8%E8%BF%87%E7%A8%8B"><span class="nav-number">1.0.5.</span> <span class="nav-text">CSRF利用过程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E8%87%AA%E5%8A%A8%E6%8F%90%E4%BA%A4%E8%A1%A8%E5%8D%95"><span class="nav-number">1.0.6.</span> <span class="nav-text">关于自动提交表单</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E6%BC%8F%E6%B4%9E%E7%9A%84%E5%88%86%E7%B1%BB%E4%B8%8E%E5%88%A9%E7%94%A8"><span class="nav-number">1.0.7.</span> <span class="nav-text">CSRF漏洞的分类与利用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E6%BC%8F%E6%B4%9E%E7%9A%84%E6%8C%96%E6%8E%98"><span class="nav-number">1.0.8.</span> <span class="nav-text">CSRF漏洞的挖掘</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E6%BC%8F%E6%B4%9E%E7%9A%84%E9%98%B2%E5%BE%A1"><span class="nav-number">1.0.9.</span> <span class="nav-text">CSRF漏洞的防御</span></a></li></ol></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#SRF%E8%B7%A8%E7%AB%99%E8%AF%B7%E6%B1%82%E4%BC%AA%E9%80%A0"><span class="nav-number">1.</span> <span class="nav-text">SRF跨站请求伪造</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E6%BC%8F%E6%B4%9E%E6%A6%82%E8%BF%B0"><span class="nav-number">1.0.1.</span> <span class="nav-text">CSRF漏洞概述</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E8%83%BD%E5%81%9A%E7%9A%84%E4%BA%8B"><span class="nav-number">1.0.2.</span> <span class="nav-text">CSRF能做的事</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E6%94%BB%E5%87%BB%E6%B5%81%E7%A8%8B"><span class="nav-number">1.0.3.</span> <span class="nav-text">CSRF攻击流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E5%88%A9%E7%94%A8%E5%89%8D%E6%8F%90%E6%9D%A1%E4%BB%B6"><span class="nav-number">1.0.4.</span> <span class="nav-text">CSRF利用前提条件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E5%88%A9%E7%94%A8%E8%BF%87%E7%A8%8B"><span class="nav-number">1.0.5.</span> <span class="nav-text">CSRF利用过程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E8%87%AA%E5%8A%A8%E6%8F%90%E4%BA%A4%E8%A1%A8%E5%8D%95"><span class="nav-number">1.0.6.</span> <span class="nav-text">关于自动提交表单</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E6%BC%8F%E6%B4%9E%E7%9A%84%E5%88%86%E7%B1%BB%E4%B8%8E%E5%88%A9%E7%94%A8"><span class="nav-number">1.0.7.</span> <span class="nav-text">CSRF漏洞的分类与利用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E6%BC%8F%E6%B4%9E%E7%9A%84%E6%8C%96%E6%8E%98"><span class="nav-number">1.0.8.</span> <span class="nav-text">CSRF漏洞的挖掘</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CSRF%E6%BC%8F%E6%B4%9E%E7%9A%84%E9%98%B2%E5%BE%A1"><span class="nav-number">1.0.9.</span> <span class="nav-text">CSRF漏洞的防御</span></a></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
